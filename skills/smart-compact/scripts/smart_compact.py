@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-smart_compact.py — 智能压缩决策脚本
+smart_compact.py — 智能压缩决策 + 执行脚本
 
 功能：
-  分析当前 session 上下文类型，选择对应压缩策略
-  dry-run：只分析不压缩，报告策略和 token 估算
-  实际执行：按策略执行压缩后报告结果
+  分析当前 session 上下文类型，选择压缩策略
+  --dry-run: 只分析不压缩，报告策略和 token 估算
+  --compress: 生成 LLM 摘要，压缩 session 文件
+  自动触发: token 使用率超过 80% 时触发压缩
 
 用法：
   python3 smart_compact.py --dry-run
-  python3 smart_compact.py --execute
-  python3 smart_compact.py --analyze-only
+  python3 smart_compact.py --compress
+  python3 smart_compact.py --compress --force   # 强制压缩（无视阈值）
 """
 
 import argparse
@@ -91,12 +92,12 @@ STRATEGY_PATTERNS = {
     }
 }
 
+
 # ─── 上下文分析 ──────────────────────────────────────────────────────────
 
 def get_current_session_messages(limit: int = 50) -> list[dict]:
     """通过 openclaw sessions list 获取当前 session 并读取消息"""
     try:
-        # 获取 main session 最近消息
         result = subprocess.run(
             ["openclaw", "sessions", "history", "main", "--limit", str(limit), "--json"],
             capture_output=True, text=True, timeout=15
@@ -113,7 +114,7 @@ def get_current_session_messages(limit: int = 50) -> list[dict]:
     except Exception as e:
         print(f"[SESSION WARN] {e}", file=sys.stderr)
 
-    # fallback：读取 transcript 文件（支持两种格式）
+    # fallback：读取 transcript 文件
     transcripts = sorted(
         Path.home().glob(".openclaw/agents/main/sessions/*.jsonl"),
         key=lambda p: p.stat().st_mtime,
@@ -130,10 +131,8 @@ def get_current_session_messages(limit: int = 50) -> list[dict]:
                     continue
                 try:
                     obj = json.loads(line)
-                    # 格式1：{role, content}
                     if isinstance(obj, dict) and obj.get("role") in ("user", "assistant"):
                         messages.append(obj)
-                    # 格式2：{type:"message", message:{role,content,...}}
                     elif isinstance(obj, dict) and obj.get("type") == "message":
                         inner = obj.get("message", {})
                         if isinstance(inner, dict) and inner.get("role") in ("user", "assistant"):
@@ -165,8 +164,6 @@ def analyze_context(messages: list[dict]) -> dict:
                     all_text += block.get("text", "") + "\n"
 
     all_lower = all_text.lower()
-
-    # 评分
     scores = {"A": 0, "B": 0, "C": 0}
     matched_keywords = {"A": [], "B": [], "C": []}
     code_block_count = len(re.findall(r"```[\s\S]*?```", all_text))
@@ -177,18 +174,15 @@ def analyze_context(messages: list[dict]) -> dict:
             if kw.lower() in all_lower:
                 scores[strategy] += 1
                 matched_keywords[strategy].append(kw)
-        # 代码块加权
         if strategy == "B" and code_block_count >= 3:
             scores["B"] += code_block_count
 
     total_tokens = estimate_tokens(all_text)
-
-    # 判断策略
     max_score = max(scores.values())
     if max_score == 0:
         detected = "C"
     elif scores["A"] == max_score and scores["B"] == max_score:
-        detected = "D"  # 混合
+        detected = "D"
     else:
         detected = max(scores, key=scores.get)
 
@@ -198,7 +192,6 @@ def analyze_context(messages: list[dict]) -> dict:
         "C": ("日常对话", STRATEGY_PATTERNS["日常对话"]),
         "D": ("混合session", None),
     }
-
     name, spec = strategy_info[detected]
     keep_kb = spec["keep_tokens_kb"] if spec else 8
     keep_tokens = keep_kb * 1000
@@ -230,7 +223,6 @@ def format_dry_run(analysis: dict) -> str:
         "",
         f"<b>策略 {s['strategy']} 详情：</b>",
     ]
-
     spec_map = {
         "A": ("BDX量化", STRATEGY_PATTERNS["BDX量化"]),
         "B": ("代码开发", STRATEGY_PATTERNS["代码开发"]),
@@ -242,10 +234,8 @@ def format_dry_run(analysis: dict) -> str:
         lines.append(f"保留 token：约 {s['keep_tokens_kb']}k")
         lines.append(f"预计保留率：{s['retention_rate']}%")
         lines.append(f"丢弃内容：{'、'.join(spec['drop'])}")
-
     if s["matched_keywords"]:
         lines.append(f"匹配关键词：{' '.join(s['matched_keywords'][:8])}")
-
     if s["strategy"] == "D":
         lines.extend([
             "",
@@ -254,7 +244,6 @@ def format_dry_run(analysis: dict) -> str:
             f"代码关键词命中：{s['scores']['B']} 个",
             "将按比例分配 token 预算，优先保留最近 30% 内容",
         ])
-
     lines.extend([
         "",
         "⚠️ 这是 dry-run，未执行任何压缩",
@@ -264,41 +253,235 @@ def format_dry_run(analysis: dict) -> str:
     return "\n".join(lines)
 
 
+# ─── MiniMax API ─────────────────────────────────────────────────────────
+
+MINIMAX_API_KEY = "sk-cp-DtqXh99hmgbdLdYAyGJBi22-15cNDkRT08C8ZRhwSWz6P7wprqHfPIAsc5VgR2OlZqn-Jw8aYI-cZpnoWnScq2jS99nc-MfFASRsDHoJP5QTJ38Mxc1Nylw"
+MINIMAX_URL = "https://api.minimaxi.com/v1/chat/completions"
+CONTEXT_WINDOW = 200000
+COMPACT_THRESHOLD = 0.80
+
+
+def call_minimax(prompt: str, max_tokens: int = 512) -> str:
+    import urllib.request, urllib.error
+    payload = json.dumps({
+        "model": "MiniMax-M2",
+        "messages": [
+            {"role": "system", "content": "你是对话摘要专家。把长对话压缩成简短、有价值的摘要，保留所有关键决策、结论和待办事项。"},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": max_tokens,
+        "temperature": 0.3,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        MINIMAX_URL, data=payload,
+        headers={"Authorization": f"Bearer {MINIMAX_API_KEY}", "Content-Type": "application/json"},
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+            raw = result["choices"][0]["message"]["content"]
+            import re as re2
+            raw = re2.sub(r'<thinking>[\s\S]*?</thinking>', '', raw)
+            return raw.strip()
+    except Exception as e:
+        print(f"[MiniMax API ERROR] {e}", file=sys.stderr)
+        return None
+
+
+def generate_summary(messages: list[dict], strategy: str) -> str:
+    lines = []
+    for msg in messages:
+        role = msg.get("role", "?")
+        content = msg.get("content", "")
+        if isinstance(content, str) and content.strip():
+            lines.append(f"[{role.upper()}] {content[:500]}")
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text = block.get("text", "")[:500]
+                    if text.strip():
+                        lines.append(f"[{role.upper()}] {text}")
+
+    session_text = "\n".join(lines[-30:])
+    strategy_prompts = {
+        "A": "这是一个BDX量化/股票分析session。保留：选股策略、因子、指标结论、代码片段、交易信号。",
+        "B": "这是一个代码开发session。保留：任务目标、技术决策、代码方案、文件路径、bug修复记录。",
+        "C": "这是一个日常对话session。保留：关键结论、决定的事项、用户偏好、待办任务。",
+        "D": "这是一个混合session。保留：所有关键结论、决策、任务目标。",
+    }
+    strategy_note = strategy_prompts.get(strategy, strategy_prompts["D"])
+    prompt = f"""{strategy_note}
+
+请把以下对话压缩成一段摘要（200字以内），格式：
+【摘要】<核心内容>
+【结论】<关键决策>
+【待办】<未完成事项>
+
+对话：
+{session_text}
+"""
+    result = call_minimax(prompt, max_tokens=512)
+    if not result:
+        return "[摘要生成失败]"
+    import re as _re
+    result = _re.sub(r'<thinking>[\s\S]*?</thinking>', '', result)
+    return result
+
+
+def get_latest_session_file() -> Path | None:
+    transcripts = sorted(
+        Path.home().glob(".openclaw/agents/main/sessions/*.jsonl"),
+        key=lambda p: p.stat().st_mtime, reverse=True
+    )
+    return transcripts[0] if transcripts else None
+
+
+def compact_session(force: bool = False) -> dict:
+    session_file = get_latest_session_file()
+    if not session_file:
+        return {"success": False, "reason": "找不到 session 文件"}
+
+    all_messages = []
+    with open(session_file) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                all_messages.append(obj)
+            except Exception:
+                pass
+
+    total_text = ""
+    for msg in all_messages:
+        content = msg.get("content", msg.get("message", {}).get("content", ""))
+        if isinstance(content, str):
+            total_text += content
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict):
+                    total_text += block.get("text", "")
+
+    total_tokens = estimate_tokens(total_text)
+    usage_ratio = total_tokens / CONTEXT_WINDOW
+
+    print(f"[compact] 文件: {session_file.name}")
+    print(f"[compact] 消息: {len(all_messages)} 条, token: ~{total_tokens}, 使用率: {usage_ratio:.1%}")
+
+    if not force and usage_ratio < COMPACT_THRESHOLD:
+        return {
+            "success": True,
+            "reason": f"使用率 {usage_ratio:.1%} < {COMPACT_THRESHOLD:.0%}，无需压缩",
+            "token_usage": f"{usage_ratio:.1%}",
+            "total_tokens": total_tokens,
+        }
+
+    analysis = analyze_context(all_messages[-50:])
+    strategy = analysis["strategy"]
+
+    print(f"[compact] 生成摘要 (策略 {strategy}: {analysis['strategy_name']})...")
+    summary = generate_summary(all_messages, strategy)
+    print(f"[compact] 摘要: {summary[:100]}...")
+
+    keep_count = max(5, int(len(all_messages) * 0.3))
+    recent_messages = all_messages[-keep_count:]
+
+    tmp_file = session_file.with_suffix(".jsonl.compacting")
+    with open(tmp_file, "w") as f:
+        stat_msg = {
+            "type": "system", "role": "system",
+            "content": f"<compact_boundary pre_token_count={total_tokens} pre_msg_count={len(all_messages)} strategy={strategy}>\n压缩摘要：{summary}",
+            "is_compact_boundary": True,
+        }
+        f.write(json.dumps(stat_msg, ensure_ascii=False) + "\n")
+        for msg in recent_messages:
+            f.write(json.dumps(msg, ensure_ascii=False) + "\n")
+
+    tmp_file.rename(session_file)
+
+    def safe_content(msg):
+        c = msg.get("content") or msg.get("message", {}).get("content") or ""
+        if isinstance(c, list):
+            return " ".join(b.get("text","") if isinstance(b,dict) else str(b) for b in c)
+        return str(c) if c else ""
+
+    new_tokens = sum(estimate_tokens(safe_content(msg)) for msg in recent_messages)
+    new_usage = new_tokens / CONTEXT_WINDOW
+
+    return {
+        "success": True,
+        "summary": summary,
+        "strategy": strategy,
+        "strategy_name": analysis["strategy_name"],
+        "pre_msg_count": len(all_messages),
+        "post_msg_count": len(recent_messages) + 1,
+        "pre_tokens": total_tokens,
+        "post_tokens": new_tokens,
+        "pre_usage": f"{usage_ratio:.1%}",
+        "post_usage": f"{new_usage:.1%}",
+        "saved_tokens": total_tokens - new_tokens,
+    }
+
+
 # ─── 主流程 ────────────────────────────────────────────────────────────────
 
 def run_dry_run() -> None:
     ts = datetime.now(timezone(timedelta(hours=8)))
     print(f"[{ts.strftime('%Y-%m-%d %H:%M:%S')}] Smart Compact Dry-Run 开始")
-
     messages = get_current_session_messages(limit=80)
     print(f"  获取到 {len(messages)} 条消息")
-
     if not messages:
         send_telegram("⚠️ Smart Compact：无法获取 session 历史，请检查权限")
         return
-
     analysis = analyze_context(messages)
     print(f"  策略: {analysis['strategy_name']} ({analysis['strategy']})")
     print(f"  总 token: {analysis['total_tokens_kb']}k")
     print(f"  保留率: {analysis['retention_rate']}%")
-
     report = format_dry_run(analysis)
     send_telegram(report)
     print(f"  报告已发送")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Smart Compact")
-    parser.add_argument("--dry-run", action="store_true", help="只分析不压缩")
-    parser.add_argument("--analyze-only", action="store_true", help="等同于 dry-run")
-    args = parser.parse_args()
+def run_compress(force: bool = False) -> None:
+    ts = datetime.now(timezone(timedelta(hours=8)))
+    print(f"[{ts.strftime('%Y-%m-%d %H:%M:%S')}] Smart Compact 执行开始")
+    result = compact_session(force=force)
+    if not result["success"]:
+        send_telegram(f"⚠️ Smart Compact 失败：{result['reason']}")
+        return
+    if "无需压缩" in result.get("reason", ""):
+        print(f"[compact] 跳过: {result['reason']}")
+        return
+    summary = result['summary']
+    if len(summary) > 500:
+        summary = summary[:500] + "..."
 
-    if args.dry_run or args.analyze_only:
-        run_dry_run()
-    else:
-        print("用法：smart_compact.py --dry-run")
-        print("实际压缩由 /compact 命令触发，这里只做策略分析和 Telegram 报告")
+    report = f"""🗜️ <b>Smart Compact 压缩完成</b>
+
+策略：{result['strategy_name']}（{result['strategy']}）
+压缩前：{result['pre_msg_count']}条 {result['pre_usage']} → 压缩后：{result['post_msg_count']}条 {result['post_usage']}
+节省：约 {result['saved_tokens']} token
+
+【摘要】
+{summary}"""
+    send_telegram(report)
+    print(f"[compact] 压缩完成: {result['pre_usage']} → {result['post_usage']}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Smart Compact")
+    parser.add_argument("--dry-run", action="store_true", help="只分析不压缩")
+    parser.add_argument("--analyze-only", action="store_true", help="等同于 dry-run")
+    parser.add_argument("--compress", action="store_true", help="执行实际压缩（生成摘要）")
+    parser.add_argument("--force", action="store_true", help="强制压缩（无视阈值）")
+    args = parser.parse_args()
+
+    if args.compress:
+        run_compress(force=args.force)
+    elif args.dry_run or args.analyze_only:
+        run_dry_run()
+    else:
+        print("用法：smart_compact.py --dry-run | --compress [--force]")
+        sys.exit(1)
