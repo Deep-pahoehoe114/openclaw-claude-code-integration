@@ -47,7 +47,7 @@ def get_reflection_memories():
             return reflections[:MAX_MEMORIES]
         except Exception:
             # fallback: 搜索所有
-            results = list(table.search().limit(MAX_MEMORIES).execute())
+            results = list(table.search().limit(MAX_MEMORIES).to_list())
             return results
     except Exception as e:
         print(f"[evolve] 无法连接 LanceDB: {e}", file=sys.stderr)
@@ -77,8 +77,10 @@ def get_memory_texts():
 
 REFLECTION_PATTERNS = {
     "用户纠正": [
-        r"不对", r"重来", r"不是这个意思", r"错了", r"我想要的是",
-        r"其实", r"不是这样", r"不对不对", r"等等", r"停",
+        r"不是让你记吗", r"你记哪去了", r"不对", r"重来", r"不是这个意思",
+        r"错了", r"我想要的是", r"其实", r"不是这样", r"等等", r"停",
+        r"不是要", r"等等", r"等等再", r"不是这样",
+        r"你怎么还没", r"我说了", r"我说的是",
     ],
     "工具失败": [
         r"工具调用失败", r"重试.*仍失败", r"失败后停止",
@@ -91,13 +93,24 @@ REFLECTION_PATTERNS = {
 }
 
 
-def classify_reflection(text: str) -> str:
-    """根据文本内容分类触发原因"""
+def classify_reflection(text: str, metadata_json: str = "") -> str:
+    """根据文本内容和metadata分类触发原因"""
     text_lower = text.lower()
     scores = {}
     for category, patterns in REFLECTION_PATTERNS.items():
         score = sum(1 for p in patterns if re.search(p, text_lower))
         scores[category] = score
+    
+    # 参考 metadata 里的 bad_recall_count（记忆召回质量差 = 可能是纠正场景）
+    try:
+        meta = json.loads(metadata_json) if metadata_json else {}
+        if meta.get("bad_recall_count", 0) >= 3:
+            scores["用户纠正"] = scores.get("用户纠正", 0) + 2
+        if meta.get("suppressed_until_turn", 0) > 0:
+            scores["用户纠正"] = scores.get("用户纠正", 0) + 1
+    except Exception:
+        pass
+    
     if max(scores.values()) == 0:
         return "其他"
     return max(scores, key=scores.get)
@@ -111,8 +124,9 @@ def extract_rule_candidates(memories: list) -> dict:
         text = mem.get("text", mem.get("content", ""))
         if not text:
             continue
-        cat = classify_reflection(text)
-        by_category[cat].append(text)
+        metadata_str = mem.get("metadata", "{}")
+        cat = classify_reflection(text, metadata_str)
+        by_category[cat].append((text, metadata_str))
     
     return by_category
 
@@ -124,7 +138,7 @@ def generate_rules(by_category: dict) -> list:
     # 用户纠正 → 行为规则
     corrections = by_category.get("用户纠正", [])
     if corrections:
-        unique_patterns = _deduplicate_patterns(corrections)
+        unique_patterns = _deduplicate_patterns([c[0] for c in corrections])
         rules.append(("MUST", f"【用户纠正检测】当用户说「不对」「重来」「其实不是」时，立即停止当前行动，明确询问正确的方向，不重复犯错。触发次数: {len(corrections)}"))
     
     # 工具失败 → 协议规则
