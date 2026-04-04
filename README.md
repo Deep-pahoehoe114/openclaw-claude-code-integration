@@ -167,6 +167,17 @@ NEVER 直接修改涉及资金/仓位/外部发送的操作，必须先生成变
 
 在 HEARTBEAT.md 和 MEMORY.md 之间插入 `<!-- DYNAMIC_BOUNDARY -->` 分隔符，边界前的内容稳定命中 prompt cache，每次对话节省约 6,000-8,000 tokens。
 
+### 支持 Prompt Cache 的模型
+
+| 模型 | 缓存机制 | 配置方式 | 备注 |
+|------|---------|---------|------|
+| **Claude**（Anthropic API） | 原生自动缓存 | 无需配置 | Claude Code 专用，缓存最完善 |
+| **GPT-4o**（OpenAI API） | 自动缓存 | 无需配置 | 超过 1024 tokens 自动生效 |
+| **Gemini 1.5 Pro**（Google API） | 显式 Context Caching | 需手动创建缓存对象 | 需要预先创建缓存 |
+| **DeepSeek V3/R1**（SiliconFlow） | 支持 | SiliconFlow 上已配置 | MiniMax 暂不支持 |
+
+> **当前 OpenClaw（MiniMax）**：不支持 prompt cache 的自动复用，因为 MiniMax API 不暴露 cache token 机制。但静态/动态分层架构已就绪，模型支持后自动生效。
+
 ### 工具调用失败协议
 
 ```markdown

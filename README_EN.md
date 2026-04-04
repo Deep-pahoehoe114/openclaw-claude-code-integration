@@ -167,6 +167,17 @@ Rule classification:
 
 Insert `<!-- DYNAMIC_BOUNDARY -->` between HEARTBEAT.md and MEMORY.md. Content before the boundary stably hits prompt cache, saving ~6,000-8,000 tokens per conversation turn.
 
+### Prompt Cache Supporting Models
+
+| Model | Cache Mechanism | Setup | Notes |
+|-------|----------------|-------|-------|
+| **Claude** (Anthropic API) | Native auto-cache | No config needed | Best-in-class, Claude Code exclusive |
+| **GPT-4o** (OpenAI API) | Auto-cache | No config needed | Auto-activates > 1024 tokens |
+| **Gemini 1.5 Pro** (Google API) | Explicit Context Caching | Manual cache object required | Must pre-create cache |
+| **DeepSeek V3/R1** (SiliconFlow) | Supported | Configured on SiliconFlow | MiniMax not yet supported |
+
+> **Current OpenClaw (MiniMax)**: Does not support prompt cache token reuse — MiniMax API does not expose cache token mechanics. The static/dynamic layer architecture is ready; it will activate automatically once the model supports it.
+
 ### Tool Failure Protocol
 
 ```markdown
