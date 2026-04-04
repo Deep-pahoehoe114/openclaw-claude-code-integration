@@ -255,28 +255,24 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
     }
 
 
-    # ─── MiniMax embedding ──────────────────────────────────────────────
+    # ─── SiliconFlow embedding ──────────────────────────────────────────
     import urllib.request, urllib.error
 
-    MINIMAX_API_KEY = "sk-cp-DtqXh99hmgbdLdYAyGJBi22-15cNDkRT08C8ZRhwSWz6P7wprqHfPIAsc5VgR2OlZqn-Jw8aYI-cZpnoWnScq2jS99nc-MfFASRsDHoJP5QTJ38Mxc1Nylw"
-    MINIMAX_EMBED_URL = "https://api.minimaxi.com/v1/embeddings"
+    SILICONFLOW_API_KEY = "sk-upwbwgadvnjyeyqspqrnmoimwmodutrocqxxguhtxswywups"
+    SILICONFLOW_EMBED_URL = "https://api.siliconflow.cn/v1/embeddings"
 
-    def get_embedding(text: str) -> tuple[list[float], bool]:
-        """
-        调用 MiniMax bge-m3 (embo1) 获取文本 embedding（1024维）。
-        API format: POST /v1/embeddings, body: {"model":"embo1","type":"db_compute","texts":[...]}
-        返回 (vector, is_fallback)。is_fallback=True 表示使用了 hash 伪向量。
-        """
+    def get_embedding(text: str) -> list[float]:
+        """调用 SiliconFlow BAAI/bge-m3 获取文本 embedding（1024维）"""
         payload = json.dumps({
-            "model": "embo1",
-            "type": "db_compute",
-            "texts": [text[:2000]],  # 截断避免超限，MiniMax 要求 texts 数组
+            "model": "BAAI/bge-m3",
+            "input": text[:2000],
+            "encoding_format": "float"
         }).encode("utf-8")
         req = urllib.request.Request(
-            MINIMAX_EMBED_URL,
+            SILICONFLOW_EMBED_URL,
             data=payload,
             headers={
-                "Authorization": f"Bearer {MINIMAX_API_KEY}",
+                "Authorization": f"Bearer {SILICONFLOW_API_KEY}",
                 "Content-Type": "application/json"
             },
             method="POST"
@@ -284,29 +280,32 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
                 result = json.loads(resp.read())
-                vectors = result.get("vectors")
-                if vectors and vectors[0]:
-                    return vectors[0], False
-                # vectors 为 null 说明账户余额不足
-                raise ValueError(f"MiniMax returned null vectors: {result.get('base_resp')}")
+                return result["data"][0]["embedding"]
         except Exception as e:
-            err_str = str(e)
-            if "null vectors" in err_str:
-                print(f"[self_eval] MiniMax embedding returned null (insufficient balance) — FALLBACK: hash pseudo vector", file=sys.stderr)
-            else:
-                print(f"[self_eval] MiniMax embedding API failed: {e} — FALLBACK: hash pseudo vector", file=sys.stderr)
-            # FALLBACK: 基于文本内容的确定性伪向量（相同文本产生相同向量，但语义质量差，仅作保底）
-            import hashlib
-            h = hashlib.sha256(text.encode("utf-8")).digest()
-            vec = [0.0] * 1024
-            for i in range(min(len(h), 1024)):
-                vec[i] = (h[i] / 255.0) * 2 - 1  # [-1, 1] 范围
-            return vec, True
+            print(f"[self_eval] SiliconFlow embedding failed: {e}, trying MiniMax fallback", file=sys.stderr)
+            # Fallback to MiniMax
+            MINIMAX_API_KEY = "sk-cp-DtqXh99hmgbdLdYAyGJBi22-15cNDkRT08C8ZRhwSWz6P7wprqHfPIAsc5VgR2OlZqn-Jw8aYI-cZpnoWnScq2jS99nc-MfFASRsDHoJP5QTJ38Mxc1Nylw"
+            MINIMAX_EMBED_URL = "https://api.minimaxi.com/v1/embeddings"
+            payload2 = json.dumps({"model": "minimax-embedding", "input": text[:2000]}).encode("utf-8")
+            req2 = urllib.request.Request(
+                MINIMAX_EMBED_URL, data=payload2,
+                headers={"Authorization": f"Bearer {MINIMAX_API_KEY}", "Content-Type": "application/json"},
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req2, timeout=15) as resp2:
+                    result2 = json.loads(resp2.read())
+                    return result2["data"][0]["embedding"]
+            except Exception as e2:
+                print(f"[self_eval] MiniMax also failed: {e2}, using hash fallback", file=sys.stderr)
+                import hashlib
+                h = hashlib.sha256(text.encode("utf-8")).digest()
+                vec = [0.0] * 1024
+                for i in range(min(len(h), 1024)):
+                    vec[i] = (h[i] / 255.0) * 2 - 1
+                return vec
 
-    vector, is_fallback = get_embedding(content)
-
-    if is_fallback:
-        print(f"[self_eval] WARNING: using FALLBACK hash vector for reflection {record_id}", file=sys.stderr)
+    vector = get_embedding(content)
 
     db = lancedb.connect(str(LANCE_DB_PATH))
     tbl = db.open_table("memories")
@@ -323,7 +322,7 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
             "metadata": json.dumps(meta, ensure_ascii=False),
         }
     ])
-    print(f"[self_eval] stored reflection: {record_id} (fallback={is_fallback})")
+    print(f"[self_eval] stored reflection: {record_id}")
     return True
 
 
