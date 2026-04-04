@@ -1,13 +1,13 @@
 <div align="center">
 
-# 🦞 OpenClaw × Claude Code · Elite Integration
+# 🦞 OpenClaw × Claude Code · 精华整合
 
-**[OpenClaw](https://github.com/openclaw/openclaw) AI Agent 的 Claude Code 工程实践整合**
+**[OpenClaw](https://github.com/openclaw/openclaw) AI 智能体的 Claude Code 工程实践移植**
 
 *把 Claude Code 源码里最有价值的工程实践，移植到你的个人 AI 助手。*
 
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-Ready-blue)](https://github.com/openclaw/openclaw)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Source%20Leaked-green)](https://github.com/Fried-Chicken/Claude-Code)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-源码泄露-green)](https://github.com/Fried-Chicken/Claude-Code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/ybbms777/openclaw-claude-code-integration)](https://github.com/ybbms777/openclaw-claude-code-integration/stargazers)
 
@@ -169,7 +169,7 @@ openclaw-claude-code-integration/
 │   ├── cache-monitor/               # Prompt cache 监控
 │   ├── smart-compact/               # LLM 摘要压缩（双阶段输出）
 │   ├── yolo-permissions/            # 三级权限分类
-│   └── safe-command-execution/      # Bash AST 安全层
+│   └── safe-command-execution/       # Bash AST 安全层
 ├── tests/                            # pytest 测试套件（94测试）
 └── docs/
     ├── 01-architecture.md           # 设计思路详解

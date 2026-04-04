@@ -1,0 +1,23 @@
+name: Feature Request ✨
+description: Suggest a new feature or improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Feature Description
+        Describe the feature you'd like to see.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "解决的问题"
+      description: "What problem does this solve?"
+      placeholder: "描述这个功能要解决什么问题"
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "建议方案"
+      description: "How should it work?"
+      placeholder: "你期望这个功能怎么工作"
