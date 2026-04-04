@@ -5,7 +5,7 @@ self_eval.py — 自我评估脚本
 在 session_end 时自动运行：
 1. 读取当前 session 历史
 2. 检查三种情况：用户纠正 / 工具重试失败 / 上报规则触发
-3. 有任一情况 → memory_store 写入 reflection 记忆
+3. 有任一情况 → memory_store 写入 reflection 记忆 + LEARNINGS.md（仅纠正）
 4. 无情况 → 静默退出
 """
 
@@ -21,6 +21,8 @@ WORKSPACE = Path.home() / ".openclaw" / "workspace"
 MEMORY_STORE_SCRIPT = WORKSPACE / "skills" / "memory-lancedb-pro" / "scripts" / "memory_store.py"
 LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
 STATE_FILE = WORKSPACE / ".self_eval.json"
+LEARNINGS_FILE = WORKSPACE / ".learnings" / "LEARNINGS.md"
+
 
 # ─── 读取 session 历史 ─────────────────────────────────────────────────────
 
@@ -58,16 +60,41 @@ def load_session_messages(limit: int = 200) -> list[dict]:
     return messages[-limit:]
 
 
+def extract_text(content) -> str:
+    """从消息 content 字段中提取纯文本"""
+    if isinstance(content, list):
+        parts = []
+        for b in content:
+            if isinstance(b, dict) and b.get("type") == "text":
+                t = b.get("text", "")
+                if not t.strip().startswith("{"):
+                    parts.append(t)
+        return " ".join(parts)
+    return str(content)
+
+
 # ─── 检测条件 ─────────────────────────────────────────────────────────────
 
-CORRECTION_PATTERNS = [
-    r"不对", r"不是", r"重来", r"重新做", r"错了", r"不对的",
-    r"不是这个", r"纠正", r"我想要的是", r"其实我想要",
-    r"no,?", r"not right", r"wrong", r"mistake",
-    r"不是要这个", r"我说的是", r"你应该", r"不对啊",
+CORRECTION_PATTERNS_EXPLICIT = [
+    r"\b不对\b", r"\b不是\b", r"\b重来\b", r"\b重新做\b", r"\b错了\b",
+    r"\b纠正\b", r"我想要的是", r"其实我想要",
+    r"\bno\b", r"not right", r"\bwrong\b", r"\bmistake\b",
+    r"不是要这个", r"\b我说的是\b", r"\b你应该\b", r"\b不对啊\b",
+    r"不是这个", r"不对的",
 ]
 
-# 排除模式：单独出现但不是在纠正AI
+# 隐式纠正模式：语气强烈暗示 agent 行为有误，但未直接说"不对"
+CORRECTION_PATTERNS_IMPLICIT = [
+    r"又这样了", r"又卡了", r"又不回复", r"为什么(没有|不|又)",
+    r"怎么(又|还|老是)", r"这不是.*麻烦", r"\b太慢了\b",
+    r"还是没有", r"没有任何", r"\b不对[啊吧]?\b",
+    r"停下来", r"你搞错了", r"不是这个意思",
+    r"我说的不是", r"不用.*了", r"\b算了\b",
+]
+
+CORRECTION_PATTERNS = CORRECTION_PATTERNS_EXPLICIT + CORRECTION_PATTERNS_IMPLICIT
+
+# 排除模式：陈述客观事实而非纠正 AI
 CORRECTION_EXCLUDE = [
     r"市场不对", r"数据不对", r"价格不对", r"数字不对",
     r"名字不对", r"地址不对", r"时间不对", r"日期不对",
@@ -83,50 +110,34 @@ TOOL_FAILURE_PATTERNS = [
 ]
 
 BDX_FAILURE_PATTERNS = [
-    r"bdx.*失败",
-    r"BDX.*失败",
-    r"bdx.*error",
-    r"BDX.*error",
-    r"BDX.*告警",
-    r"bdx.*alert",
-    r"qmt.*失败",
-    r"akshare.*失败",
-    r"回测.*失败",
-    r"策略.*失败",
-    r"量化.*失败",
+    r"bdx.*失败", r"BDX.*失败", r"\bbdx.*error", r"\bBDX.*error",
+    r"\bBDX.*告警", r"\bbdx.*alert", r"\bqmt.*失败", r"\bakshare.*失败",
+    r"回测.*失败", r"策略.*失败", r"量化.*失败",
 ]
 
 PAUSE_CONFIRM_PATTERNS = [
-    r"需要我确认",
-    r"先告诉我",
-    r"暂停.*等",
-    r"must.*confirm",
-    r"等我.*指示",
+    r"需要我确认", r"先告诉我", r"暂停.*等",
+    r"must.*confirm", r"等我.*指示",
 ]
 
 
 def detect_corrections(messages: list[dict]) -> list[dict]:
-    """检测用户纠正语句（只在 role==user 的消息里匹配，排除无关语境）"""
+    """检测用户纠正语句（含显式+隐式），返回每个纠正及其前一跳 assistant 消息"""
     findings = []
     user_messages = [m for m in messages if m.get("role") == "user"]
+    msg_idx_map = {id(m): i for i, m in enumerate(messages)}
+
     for msg in user_messages:
-        content = msg.get("content", "")
-        if isinstance(content, list):
-            parts = []
-            for b in content:
-                if isinstance(b, dict) and b.get("type") == "text":
-                    t = b.get("text", "")
-                    if not t.strip().startswith("{"):
-                        parts.append(t)
-            text = " ".join(parts)
-        else:
-            text = str(content)
+        idx = msg_idx_map.get(id(msg), -1)
+        text = extract_text(msg.get("content", ""))
+
         # 跳过含元数据块的消息
         if not text.strip() or re.search(
-            r"(relevant-memories|Conversation info|Sender \(untrusted|UNTRUSTED DATA|message_id|sender_id|metadata)", 
+            r"(relevant-memories|Conversation info|Sender \(untrusted|UNTRUSTED DATA|message_id|sender_id|metadata)",
             text, re.IGNORECASE
         ):
             continue
+
         # 排除无关语境
         for exc in CORRECTION_EXCLUDE:
             if re.search(exc, text, re.IGNORECASE):
@@ -134,10 +145,20 @@ def detect_corrections(messages: list[dict]) -> list[dict]:
         else:
             for pattern in CORRECTION_PATTERNS:
                 if re.search(pattern, text, re.IGNORECASE):
+                    # 取前一条 assistant 消息作为上下文
+                    prev_assistant = ""
+                    if idx > 0:
+                        for prev in reversed(messages[:idx]):
+                            if prev.get("role") == "assistant":
+                                prev_assistant = extract_text(prev.get("content", ""))[:200]
+                                break
+
                     findings.append({
                         "type": "user_correction",
                         "pattern": pattern,
+                        "pattern_type": "implicit" if pattern in CORRECTION_PATTERNS_IMPLICIT else "explicit",
                         "excerpt": text[:200],
+                        "prev_assistant": prev_assistant,
                         "timestamp": msg.get("timestamp"),
                     })
                     break
@@ -149,18 +170,9 @@ def detect_tool_failures(messages: list[dict]) -> list[dict]:
     findings = []
     seen_tools = set()
     for msg in messages:
-        content = msg.get("content", "")
-        if isinstance(content, list):
-            text = " ".join(
-                b.get("text", "")
-                for b in content
-                if isinstance(b, dict) and b.get("type") == "text"
-            )
-        else:
-            text = str(content)
+        text = extract_text(msg.get("content", ""))
         for pattern in TOOL_FAILURE_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
-                # 提取工具名（从内容中找 "tool XXX failed" 之类）
                 tool_match = re.search(r"tool[:\s]+(\w+)", text, re.IGNORECASE)
                 tool_name = tool_match.group(1).lower() if tool_match else pattern
                 if tool_name in seen_tools:
@@ -177,18 +189,12 @@ def detect_tool_failures(messages: list[dict]) -> list[dict]:
 
 
 def detect_bdx_failures(messages: list[dict]) -> list[dict]:
-    """检测 BDX 相关工具失败"""
+    """检测 BDX 相关工具失败（只在非 assistant 消息中匹配，避免误报）"""
     findings = []
     for msg in messages:
-        content = msg.get("content", "")
-        if isinstance(content, list):
-            text = " ".join(
-                b.get("text", "")
-                for b in content
-                if isinstance(b, dict) and b.get("type") == "text"
-            )
-        else:
-            text = str(content)
+        if msg.get("role") == "assistant":
+            continue
+        text = extract_text(msg.get("content", ""))
         for pattern in BDX_FAILURE_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 findings.append({
@@ -201,22 +207,10 @@ def detect_bdx_failures(messages: list[dict]) -> list[dict]:
 
 
 def detect_pause_rules(messages: list[dict]) -> list[dict]:
-    """检测上报规则触发（跳过含JSON元数据的消息，只看真实文本）"""
+    """检测上报规则触发"""
     findings = []
     for msg in messages:
-        content = msg.get("content", "")
-        if isinstance(content, list):
-            parts = []
-            for b in content:
-                if isinstance(b, dict) and b.get("type") == "text":
-                    t = b.get("text", "")
-                    # 跳过纯JSON元数据行
-                    if not t.strip().startswith("{"):
-                        parts.append(t)
-            text = " ".join(parts)
-        else:
-            text = str(content)
-        # 跳过包含元数据块的消息
+        text = extract_text(msg.get("content", ""))
         if not text.strip() or re.search(
             r"(relevant-memories|Conversation info|Sender \(untrusted|UNTRUSTED DATA|message_id|sender_id|metadata)",
             text, re.IGNORECASE
@@ -233,10 +227,47 @@ def detect_pause_rules(messages: list[dict]) -> list[dict]:
     return findings
 
 
+# ─── 写入 LEARNINGS.md ────────────────────────────────────────────────────
+
+def store_learnings_md(findings: list[dict]) -> int:
+    """将纠正写入 LEARNINGS.md，返回写入条数"""
+    if not findings:
+        return 0
+
+    LEARNINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    # 读取现有内容，避免重复追加
+    existing = ""
+    if LEARNINGS_FILE.exists():
+        existing = LEARNINGS_FILE.read_text()
+
+    entries = []
+    now = datetime.now(timezone(timedelta(hours=8)))
+    ts = now.strftime("%Y-%m-%d %H:%M")
+
+    for f in findings:
+        prev = f.get("prev_assistant", "")[:50].replace("\n", " ").strip()
+        user_text = f.get("excerpt", "")[:50].replace("\n", " ").strip()
+        entry = f"""## [{ts}] 用户纠正
+- 触发词：{f['pattern']}（{'隐式' if f.get('pattern_type') == 'implicit' else '显式'}）
+- 上下文：{user_text}
+- agent 行为：{prev}
+- 状态：pending
+"""
+        entries.append(entry)
+
+    # 追加到文件
+    with open(LEARNINGS_FILE, "a", encoding="utf-8") as fw:
+        fw.write("\n".join(entries) + "\n")
+
+    print(f"[self_eval] 写入 {len(entries)} 条到 LEARNINGS.md")
+    return len(entries)
+
+
 # ─── 写入 LanceDB ─────────────────────────────────────────────────────────
 
 def store_reflection(category: str, content: str, importance: float = 0.9) -> bool:
-    """通过 lance_db 直接写入 reflection 记忆"""
+    """写入 reflection 记忆到 LanceDB"""
     try:
         import lancedb
     except ImportError:
@@ -244,7 +275,7 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
         return False
 
     now_ms = int(datetime.now(timezone(timedelta(hours=8))).timestamp() * 1000)
-    import hashlib, time as _time
+    import hashlib
     record_id = hashlib.sha256(f"reflection_{now_ms}".encode()).hexdigest()[:16]
 
     meta = {
@@ -254,15 +285,12 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
         "created_at": now_ms,
     }
 
-
-    # ─── SiliconFlow embedding ──────────────────────────────────────────
     import urllib.request, urllib.error
 
     SILICONFLOW_API_KEY = "sk-okktyfycdtebumjqwghnbrkpqdyulrzuojxcyyzsnfixkspz"
     SILICONFLOW_EMBED_URL = "https://api.siliconflow.cn/v1/embeddings"
 
     def get_embedding(text: str) -> list[float]:
-        """调用 SiliconFlow BAAI/bge-m3 获取文本 embedding（1024维）"""
         payload = json.dumps({
             "model": "BAAI/bge-m3",
             "input": text[:2000],
@@ -271,19 +299,13 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
         req = urllib.request.Request(
             SILICONFLOW_EMBED_URL,
             data=payload,
-            headers={
-                "Authorization": f"Bearer {SILICONFLOW_API_KEY}",
-                "Content-Type": "application/json"
-            },
+            headers={"Authorization": f"Bearer {SILICONFLOW_API_KEY}", "Content-Type": "application/json"},
             method="POST"
         )
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
-                result = json.loads(resp.read())
-                return result["data"][0]["embedding"]
-        except Exception as e:
-            print(f"[self_eval] SiliconFlow embedding failed: {e}, trying MiniMax fallback", file=sys.stderr)
-            # Fallback to MiniMax
+                return json.loads(resp.read())["data"][0]["embedding"]
+        except Exception:
             MINIMAX_API_KEY = "sk-cp-DtqXh99hmgbdLdYAyGJBi22-15cNDkRT08C8ZRhwSWz6P7wprqHfPIAsc5VgR2OlZqn-Jw8aYI-cZpnoWnScq2jS99nc-MfFASRsDHoJP5QTJ38Mxc1Nylw"
             MINIMAX_EMBED_URL = "https://api.minimaxi.com/v1/embeddings"
             payload2 = json.dumps({"model": "minimax-embedding", "input": text[:2000]}).encode("utf-8")
@@ -294,11 +316,9 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
             )
             try:
                 with urllib.request.urlopen(req2, timeout=15) as resp2:
-                    result2 = json.loads(resp2.read())
-                    return result2["data"][0]["embedding"]
+                    return json.loads(resp2.read())["data"][0]["embedding"]
             except Exception as e2:
-                print(f"[self_eval] MiniMax also failed: {e2}, using hash fallback", file=sys.stderr)
-                import hashlib
+                print(f"[self_eval] embedding failed: {e2}, using hash fallback", file=sys.stderr)
                 h = hashlib.sha256(text.encode("utf-8")).digest()
                 vec = [0.0] * 1024
                 for i in range(min(len(h), 1024)):
@@ -306,24 +326,20 @@ def store_reflection(category: str, content: str, importance: float = 0.9) -> bo
                 return vec
 
     vector = get_embedding(content)
-
     db = lancedb.connect(str(LANCE_DB_PATH))
     tbl = db.open_table("memories")
-
-    tbl.add([
-        {
-            "id": record_id,
-            "text": content,
-            "vector": vector,
-            "category": category,
-            "scope": "agent",
-            "importance": importance,
-            "timestamp": float(now_ms) / 1000,
-            "metadata": json.dumps(meta, ensure_ascii=False),
-            "uri": "",
-            "access_count": 0,
-        }
-    ])
+    tbl.add([{
+        "id": record_id,
+        "text": content,
+        "vector": vector,
+        "category": category,
+        "scope": "agent",
+        "importance": importance,
+        "timestamp": float(now_ms) / 1000,
+        "metadata": json.dumps(meta, ensure_ascii=False),
+        "uri": "",
+        "access_count": 0,
+    }])
     print(f"[self_eval] stored reflection: {record_id}")
     return True
 
@@ -334,10 +350,12 @@ def build_reflection_text(finding: dict, context: str = "") -> str:
     excerpt = finding.get("excerpt", "")[:150]
 
     if t == "user_correction":
+        pattern_type = finding.get("pattern_type", "explicit")
+        prefix = "隐式" if pattern_type == "implicit" else "显式"
         return (
-            f"自我评估：在用户纠正场景下判断失误/处理不当。"
-            f"正确做法：收到「不对/重来/错了」时立即停止当前思路，重新理解需求再行动。"
-            f"触发原因：用户纠正 | 内容：{excerpt}"
+            f"自我评估：在用户纠正场景下判断失误/处理不当（{prefix}纠正）。"
+            f"正确做法：收到「不对/重来/错了/又」时立即停止当前思路，重新理解需求再行动。"
+            f"触发原因：{prefix}纠正 | 触发词：{finding['pattern']} | 内容：{excerpt}"
         )
     elif t == "tool_failure":
         return (
@@ -362,9 +380,12 @@ def build_reflection_text(finding: dict, context: str = "") -> str:
 
 # ─── 主流程 ──────────────────────────────────────────────────────────────
 
-def run_self_eval() -> dict:
+def run_self_eval(dry_run: bool = False) -> dict:
+    """
+    执行自我评估。dry_run=True 时只检测不写入，用于测试。
+    """
     ts = datetime.now(timezone(timedelta(hours=8)))
-    print(f"[{ts.strftime('%Y-%m-%d %H:%M:%S')}] self_eval 开始")
+    print(f"[{ts.strftime('%Y-%m-%d %H:%M:%S')}] self_eval {'(dry-run)' if dry_run else ''} 开始")
 
     messages = load_session_messages(limit=200)
     print(f"  读取 {len(messages)} 条消息")
@@ -378,18 +399,42 @@ def run_self_eval() -> dict:
     pauses = detect_pause_rules(messages)
     bdx_failures = detect_bdx_failures(messages)
 
-    total = len(corrections) + len(failures) + len(pauses) + len(bdx_failures)
-    print(f"  纠正: {len(corrections)} | 工具失败: {len(failures)} | BDX失败: {len(bdx_failures)} | 上报: {len(pauses)}")
+    explicit_corr = [c for c in corrections if c.get("pattern_type") == "explicit"]
+    implicit_corr = [c for c in corrections if c.get("pattern_type") == "implicit"]
 
+    print(f"  显式纠正: {len(explicit_corr)} | 隐式纠正: {len(implicit_corr)} | 工具失败: {len(failures)} | BDX失败: {len(bdx_failures)} | 上报: {len(pauses)}")
+
+    if dry_run:
+        # 只打印检测结果，不写入
+        for i, c in enumerate(corrections, 1):
+            print(f"\n  [{i}] 触发词: {c['pattern']}（{c.get('pattern_type')}）")
+            print(f"      用户: {c['excerpt'][:80]}")
+            print(f"      Agent: {c.get('prev_assistant','')[:80]}")
+        if not corrections:
+            print("  无纠正检测到")
+        return {
+            "status": "dry_run",
+            "corrections": len(corrections),
+            "explicit": len(explicit_corr),
+            "implicit": len(implicit_corr),
+            "failures": len(failures),
+            "pauses": len(pauses),
+        }
+
+    total = len(corrections) + len(failures) + len(pauses) + len(bdx_failures)
     if total == 0:
         print("  无异常，静默退出")
         return {"status": "silent", "corrections": 0, "failures": 0, "bdx_failures": 0, "pauses": 0}
 
     stored = 0
-    for finding in corrections:
-        text = build_reflection_text(finding)
-        if text and store_reflection("reflection", text, importance=0.9):
-            stored += 1
+
+    # 纠正 → 写 LEARNINGS.md + LanceDB
+    if corrections:
+        store_learnings_md(corrections)
+        for finding in corrections:
+            text = build_reflection_text(finding)
+            if text and store_reflection("reflection", text, importance=0.9):
+                stored += 1
 
     for finding in failures:
         text = build_reflection_text(finding)
@@ -410,6 +455,8 @@ def run_self_eval() -> dict:
     return {
         "status": "stored",
         "corrections": len(corrections),
+        "explicit": len(explicit_corr),
+        "implicit": len(implicit_corr),
         "failures": len(failures),
         "pauses": len(pauses),
         "stored": stored,
@@ -417,5 +464,7 @@ def run_self_eval() -> dict:
 
 
 if __name__ == "__main__":
-    result = run_self_eval()
+    # 默认 dry_run=True 用于手动测试；cron 调用时传 dry_run=False
+    dry = "--dry" in sys.argv or "--dry-run" in sys.argv
+    result = run_self_eval(dry_run=dry)
     sys.exit(0)
