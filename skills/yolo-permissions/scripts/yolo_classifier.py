@@ -8,7 +8,7 @@ yolo_classifier.py — 工具调用安全分类器
 
 示例：
   python3 yolo_classifier.py bash '{"command": "rm -rf /tmp/test"}'
-  python3 yolo_classifier.py write '{"path": "/Users/ybbms/test.txt"}'
+  python3 yolo_classifier.py write '{"path": "/tmp/test.txt"}'
 """
 
 import json

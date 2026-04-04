@@ -14,7 +14,7 @@ memory_compaction.py — LanceDB 记忆压缩脚本（增强版）
   python3 memory_compaction.py --cron        # cron 调用，错误也发 Telegram
 """
 
-import argparse
+import os, argparse
 import glob
 import json
 import math
@@ -32,7 +32,7 @@ from pathlib import Path
 
 LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
 BACKUP_DIR = LANCE_DB_PATH / "backups"
-SILICONFLOW_API_KEY = "sk-upwbwgadvnjyeyqspqrnmoimwmodutrocqxxguhtxswywups"
+SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
 SILICONFLOW_EMBED_URL = "https://api.siliconflow.cn/v1/embeddings"
 
 TELEGRAM_BOT_TOKEN = "8466224710:AAHjJS9vzZKBWxGymgJMs7tTPT83AzEfl20"

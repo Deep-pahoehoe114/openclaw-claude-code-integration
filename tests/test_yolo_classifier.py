@@ -133,13 +133,13 @@ class TestWriteEdit:
         assert result["risk"] == "MEDIUM"
 
     def test_write_openclaw_dir(self):
-        result = quick_rule_check("write", {"path": "/Users/ybbms/.openclaw/test.txt"})
+        result = quick_rule_check("write", {"path": "/tmp/.openclaw/test.txt"})
         assert result is not None
         assert result["risk"] == "HIGH"
         assert result["action"] == "block"
 
     def test_write_ssh_dir(self):
-        result = quick_rule_check("edit", {"path": "/Users/ybbms/.ssh/config"})
+        result = quick_rule_check("edit", {"path": "/tmp/.ssh/config"})
         assert result is not None
         assert result["risk"] == "HIGH"
 
