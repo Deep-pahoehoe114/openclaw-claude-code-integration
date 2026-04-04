@@ -138,10 +138,10 @@ The most important engineering philosophy from Claude Code: **never write vague 
 
 ```markdown
 # ❌ Vague instruction (ineffective)
-Try to be careful with BDX production parameters
+Try to be careful with actions involving funds or external sending
 
 # ✅ Explicit protocol (actionable)
-NEVER directly modify BDX production parameters. Always generate a change plan first and wait for user confirmation.
+NEVER directly modify actions involving funds/positions/external sending. Always generate a change plan first and wait for user confirmation.
 ```
 
 Rule classification:
@@ -175,7 +175,7 @@ On any tool failure:
 2. Retry at most 2 times, changing strategy each time
 3. If still failing after 2 retries: stop, report the reason, wait for instructions
 4. NEVER automatically switch to another tool to bypass the problem
-5. BDX-related tool failure: stop immediately, send Telegram alert, do not retry
+5. High-risk tool failure: stop immediately, send Telegram alert, do not retry
 ```
 
 Without this protocol, the agent retries indefinitely until tokens are exhausted.

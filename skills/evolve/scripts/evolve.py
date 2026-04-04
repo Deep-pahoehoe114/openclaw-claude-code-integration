@@ -149,7 +149,7 @@ def generate_rules(by_category: dict) -> list:
     # 上报触发 → 确认规则
     escalations = by_category.get("上报触发", [])
     if escalations:
-        rules.append(("MUST", f"【上报触发规则】以下情况必须暂停并明确告知用户，等待确认：涉及 BDX 生产参数/实盘仓位/删除操作/外部发送。不可擅自决定。触发次数: {len(escalations)}"))
+        rules.append(("MUST", f"【上报触发规则】以下情况必须暂停并明确告知用户，等待确认：涉及资金/仓位/删除操作/外部发送。不可擅自决定。触发次数: {len(escalations)}"))
     
     return rules
 
