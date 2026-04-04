@@ -3,3 +3,12 @@ __pycache__/
 .pytest_cache/
 skills/*/scripts/__pycache__/
 skills/*/skills/
+
+# 敏感文件
+TOOLS.md
+*.env
+.env*
+**/secrets*
+**/*secret*
+**/*token*
+**/*apikey*
