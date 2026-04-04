@@ -304,28 +304,39 @@ def generate_summary(messages: list[dict], strategy: str) -> str:
                         lines.append(f"[{role.upper()}] {text}")
 
     session_text = "\n".join(lines[-30:])
-    strategy_prompts = {
-        "A": "这是一个BDX量化/股票分析session。保留：选股策略、因子、指标结论、代码片段、交易信号。",
-        "B": "这是一个代码开发session。保留：任务目标、技术决策、代码方案、文件路径、bug修复记录。",
-        "C": "这是一个日常对话session。保留：关键结论、决定的事项、用户偏好、待办任务。",
-        "D": "这是一个混合session。保留：所有关键结论、决策、任务目标。",
-    }
-    strategy_note = strategy_prompts.get(strategy, strategy_prompts["D"])
-    prompt = f"""{strategy_note}
+    COMPRESS_PROMPT = """你是一个专业的对话压缩助手。请对以下对话内容进行压缩摘要。
 
-请把以下对话压缩成一段摘要（200字以内），格式：
-【摘要】<核心内容>
-【结论】<关键决策>
-【待办】<未完成事项>
+要求：
+1. 先在 <analysis> 标签里分析：哪些内容重要、哪些可以丢弃、关键决策和结论是什么
+2. 再在 <summary> 标签里写最终摘要
 
-对话：
-{session_text}
+重要规则：
+- <analysis> 是你的草稿纸，写你的分析思路，不会被保留
+- <summary> 才是最终输出，必须包含：核心结论、未完成任务、关键决策、重要数据
+- <summary> 控制在原内容的 20% 以内
+- BDX 相关内容：保留策略参数、回测结论、失败原因，丢弃中间计算过程
+- 代码开发相关：保留任务目标、已完成改动、待完成事项，丢弃完整代码块
+- 日常对话相关：保留核心结论，丢弃寒暄和过程性讨论
+
+输出格式：
+<analysis>
+[你的分析思路，这部分会被丢弃]
+</analysis>
+
+<summary>
+[最终摘要，只保留这部分]
+</summary>
 """
-    result = call_minimax(prompt, max_tokens=512)
+    result = call_minimax(COMPRESS_PROMPT + "\n\n对话：\n" + session_text, max_tokens=1024)
     if not result:
         return "[摘要生成失败]"
-    import re as _re
-    result = _re.sub(r'<thinking>[\s\S]*?</thinking>', '', result)
+    import re as _re2
+    result = _re2.sub(r'<thinking>[\s\S]*?</thinking>', '', result)
+    # Extract only <summary> content, discard <analysis>
+    summary_match = _re2.search(r'<summary>\s*([\s\S]*?)\s*</summary>', result)
+    if summary_match:
+        return summary_match.group(1).strip()
+    # Fallback: return as-is if tags not found
     return result
 
 
