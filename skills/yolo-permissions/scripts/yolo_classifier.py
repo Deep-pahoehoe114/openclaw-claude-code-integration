@@ -16,6 +16,13 @@ import sys
 import urllib.request
 import urllib.error
 
+# Week 4 Integration: Permission Scorer
+try:
+    from skills.yolo_permissions.scripts.permission_scorer import PermissionScorer
+    PERMISSION_SCORER_AVAILABLE = True
+except ImportError:
+    PERMISSION_SCORER_AVAILABLE = False
+
 # ─── 配置 ─────────────────────────────────────────────────────────────────
 import os
 MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
@@ -90,6 +97,23 @@ def quick_rule_check(tool_name: str, params: dict) -> dict | None:
     # Bash 工具：检查命令模式
     if tool_name == "bash":
         command = params.get("command", "")
+
+        # Week 4 Integration: Use permission scorer for dynamic scoring
+        if PERMISSION_SCORER_AVAILABLE:
+            try:
+                scorer = PermissionScorer()
+                score = scorer.score_command(command, context={"tool": "bash"})
+                risk_level = scorer.risk_level(score)
+                return {
+                    "risk": risk_level,
+                    "reason": f"动态打分 {score:.0f}/100: {command[:50]}",
+                    "action": "allow" if risk_level == "LOW" else ("confirm" if risk_level in ("MEDIUM", "HIGH") else "block"),
+                    "score": score,
+                    "source": "scorer"
+                }
+            except Exception as scorer_err:
+                print(f"[SCORING] permission_scorer 失败: {scorer_err}", file=sys.stderr)
+                # Fallback to rule-based approach
 
         # 完全安全的命令
         for safe in SAFE_BASH_PATTERNS:

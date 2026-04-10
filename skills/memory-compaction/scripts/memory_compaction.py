@@ -28,6 +28,13 @@ import urllib.error
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# Week 2 Integration: Recovery Manager
+try:
+    from skills.compact_guardian.scripts.recovery_manager import RecoveryManager
+    RECOVERY_MANAGER_AVAILABLE = True
+except ImportError:
+    RECOVERY_MANAGER_AVAILABLE = False
+
 # ─── 配置 ───────────────────────────────────────────────────────────────────
 
 LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
@@ -513,6 +520,23 @@ def main() -> None:
             if args.cron:
                 print(f"[DONE] compaction finished")
     except CompactionError as e:
+        # Week 2 Integration: Record failure for recovery manager
+        if RECOVERY_MANAGER_AVAILABLE:
+            try:
+                state_file = Path.home() / ".openclaw" / "workspace" / ".recovery" / "circuit_state.json"
+                backup_dir = BACKUP_DIR
+                recovery_mgr = RecoveryManager(state_file, backup_dir)
+                recovery_mgr.record_failure(
+                    error=str(e),
+                    details={
+                        "module": "memory_compaction",
+                        "timestamp": datetime.now(timezone(timedelta(hours=8))).isoformat(),
+                        "cron_mode": args.cron,
+                    }
+                )
+            except Exception as recovery_err:
+                print(f"[RECOVERY] 记录失败到恢复管理器失败: {recovery_err}", file=sys.stderr)
+
         err_msg = f"❌ Memory Compaction 熔断：{e}，停止执行"
         print(err_msg, file=sys.stderr)
         send_telegram_safe(err_msg)

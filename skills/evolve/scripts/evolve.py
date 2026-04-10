@@ -20,6 +20,13 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# Week 3 Integration: Learnings Extractor
+try:
+    from skills.evolve.scripts.learnings_extractor import extract_learnings_from_reflections
+    LEARNINGS_EXTRACTOR_AVAILABLE = True
+except ImportError:
+    LEARNINGS_EXTRACTOR_AVAILABLE = False
+
 # ─── 配置 ─────────────────────────────────────────────────────────────────
 LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
 LEARNINGS_FILE = Path.home() / ".openclaw" / "workspace" / ".learnings" / "LEARNINGS.md"
@@ -313,13 +320,29 @@ def main():
     learnings = get_learnings_entries()
     all_memories.extend(learnings)
 
+    # Week 3 Integration: Extract learnings from reflections
+    if LEARNINGS_EXTRACTOR_AVAILABLE:
+        try:
+            extracted_learnings = extract_learnings_from_reflections(limit=10)
+            if extracted_learnings:
+                print(f"[evolve] 从 learnings_extractor 提取 {len(extracted_learnings)} 条候选", file=sys.stderr)
+                for learning in extracted_learnings:
+                    all_memories.append({
+                        "text": learning.get("action", learning.get("rule", "")),
+                        "metadata": json.dumps({"from": "learnings_extractor", "type": learning.get("type")}),
+                        "source": "learnings_extractor"
+                    })
+        except Exception as le:
+            print(f"[evolve] learnings_extractor 提取失败: {le}", file=sys.stderr)
+
     if not all_memories:
         print("[[SKIP]] 没有找到 reflection 记忆和纠正记录，无需提炼规则。")
         sys.exit(0)
 
     lance_total = sum(1 for m in all_memories if m.get("source") == "LanceDB")
     learnings_total = sum(1 for m in all_memories if m.get("source") == "learnings_file")
-    print(f"[evolve] 共 {len(all_memories)} 条（ LanceDB {lance_total} 条 + .learnings/ {learnings_total} 条）")
+    extractor_total = sum(1 for m in all_memories if m.get("source") == "learnings_extractor")
+    print(f"[evolve] 共 {len(all_memories)} 条（LanceDB {lance_total} + .learnings/ {learnings_total} + extractor {extractor_total}）", file=sys.stderr)
 
     by_category = extract_rule_candidates(all_memories)
 

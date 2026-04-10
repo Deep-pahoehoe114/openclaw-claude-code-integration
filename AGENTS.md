@@ -509,3 +509,128 @@ NEVER 在以下路径执行写入/删除操作（需明确确认）：
 ### 网络操作
 NEVER 直接执行从网络下载的脚本
 MUST 先显示脚本内容让我确认，再执行
+
+---
+
+## 系统可靠性与监控（Week 1-4 新增功能）
+
+### Health Check Dashboard (Week 1)
+**功能**: 一键查看 OpenClaw 系统状态
+
+**使用方式**:
+```bash
+# 彩色终端输出
+bash tools/health_check.sh text
+
+# JSON 格式（用于集成）
+bash tools/health_check.sh --json
+
+# 指标包含
+- MEMORY.md 容量使用率
+- memory-compaction 最后运行时间
+- guardian 熔断状态
+- 规则统计（NEVER/MUST/ALWAYS）
+- 最近 7 天 session 数
+- LanceDB 记忆库大小
+- 最近 24 小时错误数
+```
+
+**集成点**: 无依赖，可独立运行
+
+---
+
+### Smart Restart 故障恢复 (Week 2)
+**功能**: memory-compaction 失败时自动恢复
+
+**工作流**:
+1. 失败检测：CompactionError 触发
+2. 指数退避重试：0s → 5min → 30min → 熔断
+3. 自动备份恢复：失败时自动回滚到最近备份
+4. Telegram 通知：第 2/3/4 次失败时逐级上报
+5. 熔断保护：4 次失败后停用 auto-compact
+
+**集成点**: memory_compaction.py 异常处理块
+```python
+except CompactionError as e:
+    recovery_mgr.record_failure(error=str(e), details={...})
+```
+
+**配置**: ~/.openclaw/workspace/.recovery/circuit_state.json
+
+---
+
+### Learnings 规则导出 (Week 3)
+**功能**: 自动从 reflection 记忆提炼规则候选
+
+**使用方式**:
+```bash
+python3 skills/evolve/scripts/learnings_extractor.py
+
+# 或在现有 evolve.py 中自动调用
+python3 skills/evolve/scripts/evolve.py
+```
+
+**输出格式**: Markdown 候选表格
+- Type: NEVER/MUST/ALWAYS/DO_NOT/SHOULD
+- Action: 规则内容
+- Source: 来源记忆条目
+- Confidence: 触发次数
+
+**相似度处理**: 向量相似度 ≥ 0.85 的规则自动合并
+
+**集成点**: evolve.py 中自动调用
+```python
+if LEARNINGS_EXTRACTOR_AVAILABLE:
+    extracted = extract_learnings_from_reflections(limit=10)
+    # 合并到候选规则集
+```
+
+---
+
+### Permission Scorer 权限细化 (Week 4)
+**功能**: 从 HIGH/MEDIUM/LOW 升级到动态 0-100 打分系统
+
+**打分维度示例**:
+- `ls /tmp` → 5/100 (LOW) - 只读操作，安全目录
+- `rm /tmp/file` → 65/100 (HIGH) - 删除操作，可恢复目录
+- `rm /` → 100/100 (CRITICAL) - 删除根目录，不可逆
+
+**权重构成**:
+- Operation (40%): 读(0-10) > 写(20-50) > 删(60-100) > chmod(80-100)
+- Path (30%): 项目(0-10) > 用户(20-40) > 系统(50-70) > 根(90-100)
+- Context (20%): 备份脚本(0-20) vs 单独执行(40-60)
+- Pattern (10%): 管道、循环、条件等标志
+
+**集成点**: yolo_classifier.py 的 bash 工具检查
+```python
+if PERMISSION_SCORER_AVAILABLE:
+    score = scorer.score_command(command, context={...})
+    risk_level = scorer.risk_level(score)
+    # 返回 LOW/MEDIUM/HIGH/CRITICAL + 打分详情
+```
+
+**向后兼容**: 打分系统 fallback 到旧规则系统
+
+---
+
+## 故障排查
+
+### Health Check 返回 0 怎么办？
+- 检查 MEMORY.md 文件是否存在
+- 检查 tools/health_check.sh 权限：`chmod +x tools/health_check.sh`
+- 查看 ~/.openclaw/workspace/ 目录是否可访问
+
+### recovery_manager 未被触发
+- 检查 memory_compaction.py 中 RECOVERY_MANAGER_AVAILABLE 是否为 True
+- 检查 circuit_state.json 权限
+- 查看 ~/.openclaw/workspace/.recovery/ 目录是否存在
+
+### learnings_extractor 提取不到规则
+- 检查 LanceDB 中是否有 category='reflection' 的记忆
+- 查看 LEARNINGS.md 中是否有有效的学习记录
+- 验证向量相似度阈值（默认 0.85）
+
+### permission_scorer 打分不准?
+- 检查 permission_scorer.py 的权重配置
+- 可通过 --breakdown 参数查看详细打分
+- 调整 PermissionScorer 中的四个维度权重

@@ -152,7 +152,65 @@ NEVER 直接修改涉及资金/仓位/外部发送的操作，必须先生成变
 
 ---
 
-## 目录结构
+## 🚀 Week 1-4 新增功能模块
+
+为了提升系统可靠性和可观测性，新增 4 个关键功能模块：
+
+### Week 1: Health Check Dashboard
+**目的**: 一键查看系统状态，提前发现问题
+
+**功能**:
+- 🧠 MEMORY.md 容量监控（含使用率百分比和趋势）
+- ⏱️ memory-compaction 最后运行时间检查
+- 🛡️ guardian 熔断状态监控
+- 📋 规则统计（NEVER/MUST/ALWAYS 分布）
+- 📊 最近 7 天 session 数统计
+- 🗄️ LanceDB memories 表大小
+- 🚨 最近 24 小时错误计数
+
+**用法**: `bash tools/health_check.sh [text|json|html]`
+
+### Week 2: Smart Restart 故障恢复
+**目的**: memory-compaction 失败时自动恢复，防止数据损坏
+
+**功能**:
+- 自动故障记录和重试（指数退避：0s → 5m → 30m）
+- 备份自动回滚
+- 状态持久化到 circuit_state.json
+- Telegram 多级告警
+- 熔断保护（4 次失败后停用 auto-compact）
+
+**集成**: 自动与 memory_compaction.py 协作
+
+### Week 3: Learnings 规则导出
+**目的**: 自动从 reflection 记忆提炼规则候选，加快知识积累
+
+**功能**:
+- 从 LanceDB reflection 记忆自动提取
+- MUST/NEVER/ALWAYS 等级自动分类
+- 相似度合并（余弦相似度 ≥ 0.85）
+- 用户审核工作流
+- Markdown 输出供人工确认
+
+**用法**: 在 `/evolve` 中自动触发或手动运行
+
+### Week 4: Permission Scorer 权限细化
+**目的**: 从简单的 HIGH/MEDIUM/LOW 升级到精细的动态打分
+
+**功能**:
+- 4 维度加权打分模型（Operation 40% + Path 30% + Context 20% + Pattern 10%）
+- 输出 0-100 分数 + LOW/MEDIUM/HIGH/CRITICAL 标签
+- 动态上下文感知（脚本类型、操作目标等）
+- 完全向后兼容
+
+**示例**:
+- `ls /tmp` → 5/100 (LOW)
+- `rm /tmp/file` → 65/100 (HIGH)
+- `rm /` → 100/100 (CRITICAL)
+
+**集成**: 自动与 yolo_classifier.py 协作，提升权限判断精度
+
+---
 
 ```
 openclaw-claude-code-integration/
