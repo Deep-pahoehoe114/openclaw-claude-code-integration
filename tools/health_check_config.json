@@ -1,0 +1,47 @@
+{
+  "checks": {
+    "memory": {
+      "enabled": true,
+      "limit_bytes": 15000,
+      "warning_threshold": 80,
+      "critical_threshold": 100
+    },
+    "compaction": {
+      "enabled": true,
+      "expected_frequency_days": 7,
+      "max_age_days": 14
+    },
+    "guardian": {
+      "enabled": true,
+      "critical_failures": 3
+    },
+    "lancedb": {
+      "enabled": true,
+      "check_size": true
+    },
+    "sessions": {
+      "enabled": true,
+      "lookback_days": 7
+    }
+  },
+
+  "alerts": {
+    "telegram": {
+      "enabled": true,
+      "on_critical": true,
+      "on_warning": false
+    },
+    "log_file": {
+      "enabled": true,
+      "path": "~/.openclaw/logs/health_check.log",
+      "retention_days": 30
+    }
+  },
+
+  "thresholds": {
+    "memory_percent_warning": 80,
+    "memory_percent_critical": 100,
+    "compaction_age_hours": 168,
+    "session_count_min": 5
+  }
+}
