@@ -400,35 +400,95 @@ class KnowledgeFederation:
 
     def _send_to_central(self, version: RuleVersion):
         """向中央知识库发送规则"""
+        if not self.central_api:
+            return
+
         try:
-            # 这里应该调用中央API
-            # 格式示例：POST /federation/publish
-            record = {
-                "timestamp": datetime.now().isoformat(),
-                "agent_id": self.agent_id,
-                "project_id": self.project_id,
-                "rule": asdict(version),
-            }
+            import urllib.request, urllib.error
 
-            # 临时：写入本地日志而不是真正的API调用
-            with open(self.federation_log, 'a') as f:
-                f.write(json.dumps({"action": "send_to_central", **record}) + '\n')
+            payload = json.dumps({
+                "rule_id": version.rule_id,
+                "version_id": version.version_id,
+                "parent_version": version.parent_version,
+                "author_agent": version.author_agent,
+                "content": version.content,
+                "effectiveness_score": version.effectiveness_score,
+                "status": version.status,
+                "tags": version.tags,
+                "description": version.description,
+            }).encode("utf-8")
 
+            url = f"{self.central_api}/federation/publish"
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": f"OpenClaw/{self.agent_id}",
+                },
+                method="POST"
+            )
+
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                result = json.loads(resp.read().decode())
+                logger.info(f"规则 {version.rule_id} 已同步到中央库，排行第 {result.get('leaderboard_position')} 位")
+
+        except urllib.error.HTTPError as e:
+            logger.warning(f"中央API HTTP错误 {e.code}: {e.read().decode()}")
         except Exception as e:
-            print(f"[warn] 发送到中央API失败: {e}", file=sys.stderr)
+            logger.warning(f"发送到中央API失败: {e}")
 
     def _fetch_from_central(self, filters: Dict) -> List[CommunityRule]:
         """从中央知识库获取规则"""
-        try:
-            # 这里应该调用中央API
-            # 格式示例：GET /federation/rules?tags=...&min_score=...
-
-            # 临时：返回本地副本
+        if not self.central_api:
             return list(self.leaderboard.rules.values())
 
+        try:
+            import urllib.request, urllib.error
+
+            query_parts = []
+            if filters.get("tags"):
+                query_parts.append(f"tags={','.join(filters['tags'])}")
+            if filters.get("min_score") is not None:
+                query_parts.append(f"min_score={filters['min_score']}")
+
+            query = "&".join(query_parts)
+            url = f"{self.central_api}/federation/subscribe"
+            if query:
+                url += f"?{query}"
+
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": f"OpenClaw/{self.agent_id}"},
+                method="GET"
+            )
+
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                result = json.loads(resp.read().decode())
+                community_rules = []
+
+                for rdata in result:
+                    versions = [RuleVersion(**v) for v in rdata.get("versions", [])]
+                    community_rule = CommunityRule(
+                        rule_id=rdata["rule_id"],
+                        versions=versions,
+                        effectiveness_history=[],
+                        adoption_count=rdata.get("adoption_count", 0),
+                        project_tags=set(),
+                        leaderboard_position=rdata.get("leaderboard_position"),
+                        leaderboard_score=rdata.get("leaderboard_score", 0.0),
+                    )
+                    community_rules.append(community_rule)
+
+                logger.info(f"从中央库获取 {len(community_rules)} 条社群规则")
+                return community_rules
+
+        except urllib.error.HTTPError as e:
+            logger.warning(f"中央API HTTP错误 {e.code}: {e.read().decode()}")
         except Exception as e:
-            print(f"[warn] 从中央API获取规则失败: {e}", file=sys.stderr)
-            return []
+            logger.warning(f"从中央API获取规则失败: {e}")
+
+        return list(self.leaderboard.rules.values())
 
     def _log_conflict(self, conflict: RuleConflict):
         """记录冲突日志"""
