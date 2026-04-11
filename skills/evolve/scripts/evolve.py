@@ -20,6 +20,10 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from skills.shared.logger import get_logger
+
+logger = get_logger(__name__)
+
 # Week 3 Integration: Learnings Extractor
 try:
     from skills.evolve.scripts.learnings_extractor import extract_learnings_from_reflections
@@ -55,7 +59,7 @@ def get_reflection_memories():
             results = list(table.search().limit(MAX_MEMORIES).to_list())
             return [{"text": r.get("text", ""), "metadata": "{}", "source": "LanceDB"} for r in results]
     except Exception as e:
-        print(f"[evolve] 无法连接 LanceDB: {e}", file=sys.stderr)
+        logger.error(f"无法连接 LanceDB: {e}")
         return []
 
 
@@ -116,7 +120,7 @@ def get_learnings_entries():
                 "source": "learnings_file"
             })
 
-    print(f"[evolve] 从 .learnings/ 读取 {len(entries)} 条记录", file=sys.stderr)
+    logger.info(f"从 .learnings/ 读取 {len(entries)} 条记录")
     return entries
 
 
@@ -260,7 +264,7 @@ def save_pending_candidates(candidates: list[dict]):
     }
     with open(PENDING_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
-    print(f"[evolve] 候选已暂存到 {PENDING_FILE}", file=sys.stderr)
+    logger.info(f"候选已暂存到 {PENDING_FILE}")
 
 
 def load_pending_candidates() -> list[dict]:
@@ -290,7 +294,7 @@ def update_pending_status(rule_id: int, new_status: str):
     if updated:
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"[evolve] 候选 #{rule_id} → {new_status}", file=sys.stderr)
+        logger.info(f"候选 #{rule_id} → {new_status}")
 
 
 # ─── 主逻辑 ─────────────────────────────────────────────────────────────────
@@ -299,10 +303,10 @@ def main():
     # 启动时检查是否有未处理的暂存候选
     pending = load_pending_candidates()
     if pending:
-        print(f"[evolve] ⚠️  还有 {len(pending)} 条上次的候选未处理：", file=sys.stderr)
+        logger.warning(f"还有 {len(pending)} 条上次的候选未处理")
         for c in pending:
-            print(f"  #{c['id']} [{c.get('status')}] {c.get('rule','')[:60]}...", file=sys.stderr)
-        print(f"[evolve] 回复「写入 N」或「跳过 N」处理后再生成新候选。", file=sys.stderr)
+            logger.warning(f"  #{c['id']} [{c.get('status')}] {c.get('rule','')[:60]}...")
+        logger.warning("回复「写入 N」或「跳过 N」处理后再生成新候选")
         sys.exit(0)
 
     all_memories = []
@@ -322,7 +326,7 @@ def main():
         try:
             extracted_learnings = extract_learnings_from_reflections(limit=10)
             if extracted_learnings:
-                print(f"[evolve] 从 learnings_extractor 提取 {len(extracted_learnings)} 条候选", file=sys.stderr)
+                logger.info(f"从 learnings_extractor 提取 {len(extracted_learnings)} 条候选")
                 for learning in extracted_learnings:
                     all_memories.append({
                         "text": learning.get("action", learning.get("rule", "")),
@@ -330,7 +334,7 @@ def main():
                         "source": "learnings_extractor"
                     })
         except Exception as le:
-            print(f"[evolve] learnings_extractor 提取失败: {le}", file=sys.stderr)
+            logger.error(f"learnings_extractor 提取失败: {le}")
 
     if not all_memories:
         print("[[SKIP]] 没有找到 reflection 记忆和纠正记录，无需提炼规则。")
@@ -339,7 +343,7 @@ def main():
     lance_total = sum(1 for m in all_memories if m.get("source") == "LanceDB")
     learnings_total = sum(1 for m in all_memories if m.get("source") == "learnings_file")
     extractor_total = sum(1 for m in all_memories if m.get("source") == "learnings_extractor")
-    print(f"[evolve] 共 {len(all_memories)} 条（LanceDB {lance_total} + .learnings/ {learnings_total} + extractor {extractor_total}）", file=sys.stderr)
+    logger.info(f"共 {len(all_memories)} 条（LanceDB {lance_total} + .learnings/ {learnings_total} + extractor {extractor_total}）")
 
     by_category = extract_rule_candidates(all_memories)
 
@@ -347,7 +351,7 @@ def main():
         if items:
             lance_n = sum(1 for i in items if i[2] == "LanceDB")
             learnings_n = sum(1 for i in items if i[2] == "learnings_file")
-            print(f"[evolve] {cat}: {len(items)} 条（LanceDB {lance_n} / .learnings/ {learnings_n}）")
+            logger.info(f"{cat}: {len(items)} 条（LanceDB {lance_n} / .learnings/ {learnings_n}）")
 
     rules = generate_rules(by_category)
 

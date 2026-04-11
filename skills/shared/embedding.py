@@ -14,6 +14,10 @@ import urllib.request
 import urllib.error
 from typing import Optional, List
 
+from skills.shared.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 # ─── 配置 ──────────────────────────────────────────────────────────────────
 
@@ -73,7 +77,7 @@ def get_embedding(text: str, model: str = "auto") -> Optional[List[float]]:
                 result = json.loads(resp.read().decode())
                 return result["data"][0]["embedding"]
         except Exception as e:
-            print(f"[EMBED] SiliconFlow 失败: {e}, 尝试下一方案", file=sys.stderr)
+            logger.warning(f"SiliconFlow 失败，尝试下一方案: {e}")
 
     # 尝试 MiniMax
     if model in ("auto", "minimax") and MINIMAX_API_KEY:
@@ -94,10 +98,10 @@ def get_embedding(text: str, model: str = "auto") -> Optional[List[float]]:
                 result = json.loads(resp.read().decode())
                 return result["data"][0]["embedding"]
         except Exception as e:
-            print(f"[EMBED] MiniMax 失败: {e}", file=sys.stderr)
+            logger.warning(f"MiniMax 失败: {e}")
 
     # 最后的 fallback
-    print(f"[EMBED] 使用 hash fallback", file=sys.stderr)
+    logger.info("使用 hash fallback")
     return hash_embedding(text)
 
 

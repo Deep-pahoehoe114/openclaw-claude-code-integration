@@ -13,6 +13,10 @@ import urllib.parse
 import urllib.error
 from typing import Optional
 
+from skills.shared.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 def send_telegram(
     text: str,
@@ -38,7 +42,7 @@ def send_telegram(
     cid = chat_id or os.environ.get("TG_CHAT_ID", "")
 
     if not token or not cid:
-        print("[TG] TG_BOT_TOKEN or TG_CHAT_ID not set", file=sys.stderr)
+        logger.error("TG_BOT_TOKEN or TG_CHAT_ID not set")
         return False
 
     api_url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -59,13 +63,13 @@ def send_telegram(
             result = json.loads(resp.read().decode())
             return result.get("ok", False)
     except urllib.error.HTTPError as e:
-        print(f"[TG] HTTP error {e.code}: {e.read().decode()}", file=sys.stderr)
+        logger.error(f"HTTP error {e.code}: {e.read().decode()}")
         return False
     except urllib.error.URLError as e:
-        print(f"[TG] URL error: {e.reason}", file=sys.stderr)
+        logger.error(f"URL error: {e.reason}")
         return False
     except Exception as e:
-        print(f"[TG] Failed to send: {e}", file=sys.stderr)
+        logger.error(f"Failed to send: {e}")
         return False
 
 

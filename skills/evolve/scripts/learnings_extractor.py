@@ -27,6 +27,10 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 
+from skills.shared.logger import get_logger
+
+logger = get_logger(__name__)
+
 # ─── 配置 ──────────────────────────────────────────────────────────────────
 
 WORKSPACE = Path.home() / ".openclaw" / "workspace"
@@ -79,7 +83,7 @@ def get_embedding(text: str) -> Optional[List[float]]:
                 result = json.loads(resp.read().decode())
                 return result["data"][0]["embedding"]
         except Exception as e:
-            print(f"[EMBED] SiliconFlow 失败: {e}, 尝试 MiniMax", file=sys.stderr)
+            logger.warning(f"Embedding 调用失败，尝试下一方案: {e}")
 
     if MINIMAX_API_KEY:
         try:
@@ -99,7 +103,7 @@ def get_embedding(text: str) -> Optional[List[float]]:
                 result = json.loads(resp.read().decode())
                 return result["data"][0]["embedding"]
         except Exception as e:
-            print(f"[EMBED] MiniMax 失败: {e}", file=sys.stderr)
+            logger.warning(f"MiniMax Embedding 调用失败: {e}")
 
     # 备用方案：哈希向量
     h = hashlib.sha256(text.encode("utf-8")).digest()
@@ -128,7 +132,7 @@ def load_reflections(limit: int = 50) -> List[Dict]:
     try:
         import lancedb
     except ImportError:
-        print("[ERROR] lancedb 未安装", file=sys.stderr)
+        logger.error("lancedb 未安装")
         return []
 
     try:
@@ -161,11 +165,11 @@ def load_reflections(limit: int = 50) -> List[Dict]:
                 "metadata": meta,
             })
 
-        print(f"[EXTRACT] 加载 {len(records)} 条 reflection 记忆")
+        logger.info(f"加载 {len(records)} 条 reflection 记忆")
         return records
 
     except Exception as e:
-        print(f"[ERROR] 加载记忆失败: {e}", file=sys.stderr)
+        logger.error(f"加载记忆失败: {e}")
         return []
 
 
@@ -284,11 +288,11 @@ def generate_markdown_candidate_list(limit: int = 50) -> Tuple[str, List[Dict]]:
 
     # 去重
     dedup_rules = deduplicate_rules([(r["rule_type"], r["text"]) for r in all_rules])
-    print(f"[EXTRACT] 去重后 {len(dedup_rules)} 条规则")
+    logger.info(f"去重后 {len(dedup_rules)} 条规则")
 
     # 分组相似规则
     grouped = group_similar_rules(dedup_rules)
-    print(f"[EXTRACT] 分组后 {len(grouped)} 个规则簇")
+    logger.info(f"分组后 {len(grouped)} 个规则簇")
 
     # 生成 Markdown
     now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
@@ -356,7 +360,7 @@ def approve_candidate(candidate_id: str) -> bool:
             break
 
     if not target:
-        print(f"[ERROR] 未找到规则 ID: {candidate_id}", file=sys.stderr)
+        logger.error(f"未找到规则 ID: {candidate_id}")
         return False
 
     # 追加到 LEARNINGS.md
@@ -376,11 +380,11 @@ def approve_candidate(candidate_id: str) -> bool:
         with open(LEARNINGS_FILE, "a", encoding="utf-8") as f:
             f.write(entry)
 
-        print(f"[APPROVE] 已批准规则 {candidate_id} 并追加到 {LEARNINGS_FILE}")
+        logger.info(f"已批准规则 {candidate_id} 并追加到 {LEARNINGS_FILE}")
         return True
 
     except Exception as e:
-        print(f"[ERROR] 批准规则失败: {e}", file=sys.stderr)
+        logger.error(f"批准规则失败: {e}")
         return False
 
 
