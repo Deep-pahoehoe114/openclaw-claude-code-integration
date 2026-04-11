@@ -27,21 +27,24 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 
+from skills.shared.config import (
+    WORKSPACE,
+    LANCE_DB_PATH,
+    LEARNINGS_FILE,
+    SILICONFLOW_API_KEY,
+    SILICONFLOW_EMBED_URL,
+    MINIMAX_API_KEY,
+    MINIMAX_EMBED_URL,
+    IMPORTANCE_MIN,
+    RULE_IMPORTANCE_MIN,
+    RULE_MAX_AGE_DAYS,
+    RULE_SIMILARITY_THRESHOLD,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
 
 # ─── 配置 ──────────────────────────────────────────────────────────────────
-
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
-LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
-LEARNINGS_FILE = WORKSPACE / ".learnings" / "LEARNINGS.md"
-
-SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
-SILICONFLOW_EMBED_URL = "https://api.siliconflow.cn/v1/embeddings"
-
-MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
-MINIMAX_EMBED_URL = "https://api.minimaxi.com/v1/embeddings"
 
 # 分类规则模式
 CLASSIFICATION_PATTERNS = {
@@ -51,11 +54,6 @@ CLASSIFICATION_PATTERNS = {
     "DO_NOT": r"\b(DO\s+)?NOT\b",
     "SHOULD": r"\bSHOULD\b",
 }
-
-# 重要性和时间阈值
-IMPORTANCE_MIN = 0.75
-MAX_AGE_DAYS = 30
-SIMILARITY_THRESHOLD = 0.85
 
 
 # ─── Embedding 函数 ────────────────────────────────────────────────────────
@@ -139,13 +137,13 @@ def load_reflections(limit: int = 50) -> List[Dict]:
         db = lancedb.connect(str(LANCE_DB_PATH))
         tbl = db.open_table("memories")
 
-        # 查询 category='reflection' 且 importance >= IMPORTANCE_MIN 的记忆
+        # 查询 category='reflection' 且 importance >= RULE_IMPORTANCE_MIN 的记忆
         now_ms = datetime.now(timezone(timedelta(hours=8))).timestamp() * 1000
-        age_cutoff_ms = now_ms - MAX_AGE_DAYS * 24 * 60 * 60 * 1000
+        age_cutoff_ms = now_ms - RULE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
 
         df = tbl.search(
             query_text="MUST NEVER ALWAYS",
-            where=f"category = 'reflection' AND importance >= {IMPORTANCE_MIN} AND timestamp * 1000 >= {age_cutoff_ms}"
+            where=f"category = 'reflection' AND importance >= {RULE_IMPORTANCE_MIN} AND timestamp * 1000 >= {age_cutoff_ms}"
         ).limit(limit).to_pandas()
 
         records = []
@@ -222,7 +220,7 @@ def deduplicate_rules(rules: List[Tuple[str, str]]) -> List[Dict]:
 
 def group_similar_rules(rules: List[Dict]) -> List[List[Dict]]:
     """
-    根据相似度分组规则（相似度 >= SIMILARITY_THRESHOLD）
+    根据相似度分组规则（相似度 >= RULE_SIMILARITY_THRESHOLD）
 
     返回: [[rule1, rule2, ...], ...]  # 相似的规则聚在一起
     """
@@ -249,7 +247,7 @@ def group_similar_rules(rules: List[Dict]) -> List[List[Dict]]:
             for j, other in enumerate(rules[i + 1:], start=i + 1):
                 if j in assigned:
                     continue
-                if other["_embedding"] and cosine_sim(rule["_embedding"], other["_embedding"]) >= SIMILARITY_THRESHOLD:
+                if other["_embedding"] and cosine_sim(rule["_embedding"], other["_embedding"]) >= RULE_SIMILARITY_THRESHOLD:
                     group.append(other)
                     assigned.add(j)
 

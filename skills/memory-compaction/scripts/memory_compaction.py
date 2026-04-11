@@ -28,6 +28,19 @@ import urllib.error
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from skills.shared.config import (
+    LANCE_DB_PATH,
+    BACKUP_DIR,
+    SILICONFLOW_API_KEY,
+    SILICONFLOW_EMBED_URL,
+    TG_BOT_TOKEN,
+    TG_CHAT_ID,
+    IMPORTANCE_THRESHOLD,
+    MAX_AGE_DAYS,
+    SIMILARITY_THRESHOLD,
+    MAX_BACKUPS,
+    RECOVERY_DIR,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
@@ -41,30 +54,19 @@ except ImportError:
 
 # ─── 配置 ───────────────────────────────────────────────────────────────────
 
-LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
-BACKUP_DIR = LANCE_DB_PATH / "backups"
-SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
-SILICONFLOW_EMBED_URL = "https://api.siliconflow.cn/v1/embeddings"
-
-TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TG_CHAT_ID", "")
-
-IMPORTANCE_THRESHOLD = 0.3
-AGE_DAYS_THRESHOLD = 14
-SIMILARITY_THRESHOLD = 0.85
 BATCH_SIZE = 8
-MAX_BACKUPS = 4
+AGE_DAYS_THRESHOLD = MAX_AGE_DAYS
 
 # ─── Telegram ───────────────────────────────────────────────────────────────
 
 def send_telegram(text: str) -> bool:
     data = urllib.parse.urlencode({
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": TG_CHAT_ID,
         "text": text,
         "parse_mode": "HTML"
     }).encode("utf-8")
     req = urllib.request.Request(
-        "https://api.telegram.org/bot%s/sendMessage" % TELEGRAM_BOT_TOKEN,
+        "https://api.telegram.org/bot%s/sendMessage" % TG_BOT_TOKEN,
         data=data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -527,9 +529,7 @@ def main() -> None:
         # Week 2 Integration: Record failure for recovery manager
         if RECOVERY_MANAGER_AVAILABLE:
             try:
-                state_file = Path.home() / ".openclaw" / "workspace" / ".recovery" / "circuit_state.json"
-                backup_dir = BACKUP_DIR
-                recovery_mgr = RecoveryManager(state_file, backup_dir)
+                recovery_mgr = RecoveryManager()
                 recovery_mgr.record_failure(
                     error=str(e),
                     details={

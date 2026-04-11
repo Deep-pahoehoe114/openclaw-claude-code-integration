@@ -18,7 +18,8 @@ import sys
 from pathlib import Path
 from typing import List, Tuple, Dict
 
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
+from skills.shared.config import WORKSPACE
+
 AGENTS_FILE = WORKSPACE / "AGENTS.md"
 
 

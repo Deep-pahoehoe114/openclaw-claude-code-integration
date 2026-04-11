@@ -21,6 +21,13 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
+from skills.shared.config import (
+    LANCE_DB_PATH,
+    LEARNINGS_FILE,
+    PENDING_FILE,
+    MAX_MEMORIES,
+    CATEGORY,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,13 +38,6 @@ try:
     LEARNINGS_EXTRACTOR_AVAILABLE = True
 except ImportError:
     LEARNINGS_EXTRACTOR_AVAILABLE = False
-
-# ─── 配置 ─────────────────────────────────────────────────────────────────
-LANCE_DB_PATH: Path = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
-LEARNINGS_FILE: Path = Path.home() / ".openclaw" / "workspace" / ".learnings" / "LEARNINGS.md"
-PENDING_FILE: Path = Path.home() / ".openclaw" / "workspace" / ".learnings" / "evolve-pending.json"
-MAX_MEMORIES: int = 30
-CATEGORY: str = "reflection"
 
 # ─── 类型别名 ─────────────────────────────────────────────────────────────
 MemoryEntry = Dict[str, str]
@@ -73,8 +73,9 @@ def get_reflection_memories() -> List[MemoryEntry]:
 
 def get_memory_texts() -> List[MemoryEntry]:
     """读取 memory jsonl 文件作为备用"""
+    from skills.shared.config import MEMORY_DIR
     memories: List[MemoryEntry] = []
-    memory_file = Path.home() / ".openclaw" / "workspace" / "memory" / "reflections.jsonl"
+    memory_file = MEMORY_DIR / "reflections.jsonl"
     if memory_file.exists():
         with open(memory_file) as f:
             for line in f:

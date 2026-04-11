@@ -24,25 +24,29 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from skills.shared.config import (
+    SESSIONS_DIR,
+    COMPACT_THRESHOLD,
+    CONTEXT_WINDOW,
+    TG_BOT_TOKEN,
+    TG_CHAT_ID,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
 
 # ─── Telegram ───────────────────────────────────────────────────────────────
 
-BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-CHAT_ID = os.environ.get("TG_CHAT_ID", "")
-
 
 def send_telegram(text: str) -> bool:
     import urllib.request, urllib.parse
     data = urllib.parse.urlencode({
-        "chat_id": CHAT_ID,
+        "chat_id": TG_CHAT_ID,
         "text": text,
         "parse_mode": "HTML"
     }).encode("utf-8")
     req = urllib.request.Request(
-        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+        f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage",
         data=data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )

@@ -18,7 +18,8 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
+from skills.shared.config import WORKSPACE
+
 STATE_FILE = WORKSPACE / ".cache-monitor.json"
 
 STATIC_FILES = [

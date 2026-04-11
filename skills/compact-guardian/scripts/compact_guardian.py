@@ -22,13 +22,17 @@ import sys
 import time
 from pathlib import Path
 
+from skills.shared.config import (
+    SKILLS_DIR,
+    MAX_FAILURES,
+    CIRCUIT_STATE_FILE,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
 
-GUARDIAN_DIR = Path.home() / ".openclaw" / "workspace" / "skills" / "compact-guardian"
-STATE_FILE = GUARDIAN_DIR / "circuit_state.json"
-MAX_FAILURES = 3
+GUARDIAN_DIR = SKILLS_DIR / "compact-guardian"
+STATE_FILE = GUARDIAN_DIR / CIRCUIT_STATE_FILE
 
 
 def load_state() -> dict:

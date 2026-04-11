@@ -24,42 +24,43 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+from skills.shared.config import (
+    WORKSPACE,
+    RECOVERY_DIR,
+    LANCE_DB_PATH,
+    BACKUP_DIR,
+    TG_BOT_TOKEN,
+    TG_CHAT_ID,
+    RETRY_DELAYS,
+    MAX_FAILURES,
+    CIRCUIT_TRIP_DURATION,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
 
 # ─── 配置 ──────────────────────────────────────────────────────────────────
 
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
-RECOVERY_DIR = WORKSPACE / ".recovery"
 FAILURES_FILE = RECOVERY_DIR / "failures.json"
-LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
-BACKUP_DIR = LANCE_DB_PATH / "backups"
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TG_CHAT_ID", "")
-
-# 重试策略：失败1-3次时的延迟秒数
-RETRY_DELAYS = [0, 300, 1800]  # 0s, 5m, 30m
-MAX_FAILURES_BEFORE_CIRCUIT = 4  # 第4次失败触发熔断
-CIRCUIT_TRIP_DURATION = 3600  # 熔断持续1小时
+MAX_FAILURES_BEFORE_CIRCUIT = MAX_FAILURES + 1  # 第4次失败触发熔断（从1开始计数）
 
 
 # ─── Telegram 通知 ──────────────────────────────────────────────────────────
 
 def send_telegram(text: str) -> bool:
     """发送 Telegram 通知"""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    if not TG_BOT_TOKEN or not TG_CHAT_ID:
         return False
 
     data = urllib.parse.urlencode({
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": TG_CHAT_ID,
         "text": text,
         "parse_mode": "HTML"
     }).encode("utf-8")
 
     req = urllib.request.Request(
-        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+        f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage",
         data=data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )

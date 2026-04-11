@@ -17,15 +17,16 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from skills.shared.config import (
+    WORKSPACE,
+    LANCE_DB_PATH,
+    LEARNINGS_FILE,
+)
 from skills.shared.logger import get_logger
 
 logger = get_logger(__name__)
 
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
-MEMORY_STORE_SCRIPT = WORKSPACE / "skills" / "memory-lancedb-pro" / "scripts" / "memory_store.py"
-LANCE_DB_PATH = Path.home() / ".openclaw" / "memory" / "lancedb-pro"
 STATE_FILE = WORKSPACE / ".self_eval.json"
-LEARNINGS_FILE = WORKSPACE / ".learnings" / "LEARNINGS.md"
 
 
 # ─── 读取 session 历史 ─────────────────────────────────────────────────────

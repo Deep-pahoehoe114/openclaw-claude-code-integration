@@ -18,7 +18,8 @@ import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
+from skills.shared.config import WORKSPACE
+
 MEMORY_FILE = WORKSPACE / "MEMORY.md"
 SIZE_LIMIT = 15000  # 字符数
 WARNING_THRESHOLD = 0.8  # 80% 时发出警告
