@@ -1,100 +1,124 @@
-# OpenClaw Enhancement & Compatibility Kit
+# OpenClaw 增强与兼容套件
 
 <p align="center">
-  <img src="docs/assets/oeck-github-banner.png" alt="OECK GitHub banner" width="100%" />
+  <img src="docs/assets/oeck-github-banner.png" alt="OpenClaw 增强与兼容套件主视觉" width="100%" />
 </p>
 
 <p align="center">
-  Governance, compatibility, and runtime enhancement for OpenClaw, Claude, and Codex.<br/>
-  面向 OpenClaw / Claude / Codex 的治理、兼容、运行时增强层。
+  面向 OpenClaw / Claude / Codex 的治理、兼容、运行时增强层。<br/>
+  把零散的 skills 仓库升级为统一策略、统一上下文、统一分发、统一观测的产品层。
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> ·
-  <a href="README_CN.md">简体中文</a> ·
-  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
-  <a href="docs/MIGRATION.md">Migration</a> ·
-  <a href="docs/AUDIT.md">Audit</a>
+  <a href="README.md">简体中文</a> ·
+  <a href="README_EN.md">English</a> ·
+  <a href="docs/ARCHITECTURE.md">架构说明</a> ·
+  <a href="docs/MIGRATION.md">迁移说明</a> ·
+  <a href="docs/AUDIT.md">审计报告</a> ·
+  <a href=".github/workflows/ci.yml">CI</a>
 </p>
+
+OpenClaw 增强与兼容套件（OECK）不是继续往 `skills/` 目录里堆功能，而是把这些能力放进一个可理解、可分发、可治理、可验证的运行时产品里。它默认本地可跑，同时为 OpenClaw 原生插件、Claude Bundle、Codex Bundle 提供统一产物，并为外部能力保留可选 adapter 接口。
+
+## 这是什么
+
+- 一个面向多宿主的增强层，不再假设只有 OpenClaw 一种运行环境。
+- 一个本地优先的运行时核心，统一解析 workspace、session、memory、rule、trace。
+- 一个产品化分发层，从同一份 canonical metadata 生成插件、bundle、README 清单与文档。
+- 一个工程闭环层，把 checks、post-edit validation、smoke test、CI 串成同一条验证链。
+
+## 产品亮点
 
 <p align="center">
-  <a href=".github/workflows/ci.yml">CI workflow</a> ·
-  <img src="https://img.shields.io/badge/hosts-OpenClaw%20%7C%20Claude%20%7C%20Codex-10202a" alt="Hosts" />
-  <img src="https://img.shields.io/badge/runtime-local--first-0ea5b7" alt="Local first" />
-  <img src="https://img.shields.io/badge/distribution-plugin%20%7C%20bundle%20%7C%20hooks-f38f5b" alt="Distribution targets" />
+  <img src="docs/assets/oeck-highlights-zh.png" alt="OECK 产品亮点" width="100%" />
 </p>
 
-OpenClaw Enhancement & Compatibility Kit turns a loose skills collection into a coherent product surface. It keeps `skills/` as reusable content, then layers a runtime core, policy system, context system, adapters, checks, and multi-host distribution on top.
+- `统一策略`：模式系统、审批边界、命令风险评分、规则优化不再分散在各个脚本里。
+- `统一上下文`：`WorkspaceResolver`、`SessionResolver`、`MemoryProvider`、`RuleStore` 抹平旧宿主路径假设。
+- `统一分发`：同一份 `metadata/canonical.json` 生成 OpenClaw、Claude、Codex 三种分发目标。
+- `统一观测`：默认结构化事件导出，未来按 adapter 接 Langfuse、Opik 等系统。
+- `兼容迁移`：保留现有 `skills/` 资产，并通过 shim 和 resolver 封装旧逻辑。
 
-## Why OECK
+## 模式系统与工程闭环
 
-- Keep OpenClaw-native workflows, but stop coupling everything to one host layout.
-- Ship one canonical metadata source and generate manifests, README inventories, and bundles from it.
-- Run locally by default, then enable remote sandboxing, temporal memory, and observability adapters only when needed.
-- Preserve existing skills, but put them behind unified policy, unified context, unified distribution, and unified tracing.
+<p align="center">
+  <img src="docs/assets/oeck-modes-zh.png" alt="OECK 模式系统与工程闭环" width="100%" />
+</p>
 
-## Host Targets
+- `ask / plan / build / debug / review / auto` 六种模式直接定义权限、网络、执行边界。
+- `yolo-permissions`、`safe-command-execution`、`rule-optimizer` 被统一接入策略引擎。
+- 修改代码后，`checks`、`post-edit validation`、`smoke test`、`CI` 复用同一套校验链路。
 
-- `OpenClaw Native Plugin`: generated from [openclaw.plugin.json](openclaw.plugin.json)
-- `Claude Bundle`: generated from [.claude-plugin/plugin.json](.claude-plugin/plugin.json)
-- `Codex Bundle`: generated from [.codex-plugin/plugin.json](.codex-plugin/plugin.json)
-- `GitHub presentation`: banner asset lives at [docs/assets/oeck-github-banner.png](docs/assets/oeck-github-banner.png)
+## 三宿主分发与可选适配器
 
-## What You Get
+<p align="center">
+  <img src="docs/assets/oeck-distribution-zh.png" alt="OECK 分发与适配器" width="100%" />
+</p>
 
-- `Runtime core`: `WorkspaceResolver`, `SessionResolver`, `PolicyEngine`, `ContextEngine`, `MemoryProvider`, `RuleStore`, `SandboxProvider`, `TraceExporter`
-- `Mode profiles`: `ask`, `plan`, `build`, `debug`, `review`, `auto`
-- `Checks and validation`: markdown-based checks plus post-edit validation runners for local and CI reuse
-- `Adapters`: OpenClaw-native, Claude bundle, Codex bundle, observability, lossless context, temporal memory, remote sandbox
-- `Content layer`: the existing skills stay intact under `skills/`
+- `OpenClaw 原生插件`：根目录 `openclaw.plugin.json`
+- `Claude Bundle`：`.claude-plugin/plugin.json`
+- `Codex Bundle`：`.codex-plugin/plugin.json`
+- `可选适配器`：`lossless-context`、`observability`、`temporal-memory`、`remote-sandbox`
+- `默认原则`：本地优先、无凭证可跑、外部能力按 feature flags 与 adapter 按需开启
 
-## Quick Start
+## 快速开始
 
 ```bash
+python3 tools/generate_banner.py
 python3 tools/sync_repo_state.py
 python3 tools/run_checks.py --all
 python3 tools/post_edit_validate.py
 python3 tools/smoke_test.py
 ```
 
-The repository is local-first by default. Optional external integrations stay behind adapter interfaces and feature flags, so a clean checkout still runs without cloud credentials.
+## 文档入口
 
-## Built-In vs Optional
+- [English overview](README_EN.md)
+- [中文别名页](README_CN.md)
+- [架构说明](docs/ARCHITECTURE.md)
+- [迁移说明](docs/MIGRATION.md)
+- [审计报告](docs/AUDIT.md)
+- [LLM 索引](llms.txt)
 
-- Built in: runtime core, mode profiles, plugin and bundle generation, checks runner, post-edit validation, repo map, smoke tests
-- Optional by adapter: Opik or future Langfuse exporters, temporal memory backends, remote sandboxes, lossless context backends
-- Migration friendly: legacy `skills/` entrypoints remain available through resolver-backed compatibility shims
+## 生成清单
 
-## Skills
+<details>
+<summary>查看内置 skills 清单</summary>
 
 <!-- generated-skills:start -->
-- `behavior-analyzer`: Session health analysis and anomaly detection.
-- `cache-monitor`: Static and dynamic prompt layer cache drift monitoring.
-- `compact-guardian`: Circuit breaker and recovery flow for failed compactions.
-- `evolve`: Rule extraction from reflections and learnings.
-- `fusion-engine`: Multi-source context fusion for decision support.
-- `knowledge-federation`: Rule sharing, federation, and long-term optimization.
-- `memory-compaction`: Memory pruning, merging, and optional lossless backends.
-- `rule-optimizer`: Effectiveness scoring and A/B rule refinement.
-- `safe-command-execution`: AST-based shell command inspection.
-- `self-eval`: Reflection capture and learnings persistence.
-- `smart-compact`: Session compaction strategy and transcript rewriting.
-- `yolo-permissions`: Command risk scoring and permission classification.
+- `behavior-analyzer`: 会话健康分析与异常检测。
+- `cache-monitor`: 静态与动态提示层缓存漂移监控。
+- `compact-guardian`: 面向压缩失败场景的熔断与恢复流程。
+- `evolve`: 从反思与学习记录中提炼规则。
+- `fusion-engine`: 面向决策支持的多源上下文融合。
+- `knowledge-federation`: 规则共享、联邦协同与长期优化。
+- `memory-compaction`: 记忆裁剪、合并与可选无损后端。
+- `rule-optimizer`: 规则效果评分与 A/B 精炼。
+- `safe-command-execution`: 基于 AST 的 shell 命令安全检查。
+- `self-eval`: 反思采集与学习沉淀。
+- `smart-compact`: 会话压缩策略与转录重写。
+- `yolo-permissions`: 命令风险评分与权限分类。
 <!-- generated-skills:end -->
 
-## Adapters
+</details>
+
+<details>
+<summary>查看 adapters 清单</summary>
 
 <!-- generated-adapters:start -->
-- `openclaw-native`: Native OpenClaw plugin metadata and bundle output.
-- `claude-bundle`: Claude-compatible bundle manifest and command roots.
-- `codex-bundle`: Codex-compatible bundle manifest and hook packs.
-- `lossless-context`: Optional context preservation backend for compaction workflows.
-- `observability`: Structured event exporter with optional Opik/Langfuse bridges.
-- `temporal-memory`: Optional temporal memory interface with local stub implementation.
-- `remote-sandbox`: Optional remote sandbox provider interface.
+- `openclaw-native`: OpenClaw 原生插件元数据与 bundle 产物。
+- `claude-bundle`: Claude 兼容 bundle manifest 与命令根目录。
+- `codex-bundle`: Codex 兼容 bundle manifest 与 hook 包。
+- `lossless-context`: 用于压缩流程的可选上下文保真后端。
+- `observability`: 结构化事件导出接口，可选接 Opik/Langfuse。
+- `temporal-memory`: 可选时序记忆接口，默认提供本地 stub。
+- `remote-sandbox`: 可选远程沙箱 provider 接口。
 <!-- generated-adapters:end -->
 
-## Test Inventory
+</details>
+
+<details>
+<summary>查看测试清单</summary>
 
 <!-- generated-tests:start -->
 - `skills/behavior-analyzer/tests/test_behavior_analyzer.py`: 10
@@ -120,7 +144,10 @@ The repository is local-first by default. Optional external integrations stay be
 - `tests/test_health_check.sh`: 1
 <!-- generated-tests:end -->
 
-## Repository Layout
+</details>
+
+<details>
+<summary>查看仓库结构概览</summary>
 
 <!-- generated-tree:start -->
 - `metadata/`
@@ -193,20 +220,4 @@ The repository is local-first by default. Optional external integrations stay be
   - `.github/workflows`
 <!-- generated-tree:end -->
 
-## Maintainer Workflow
-
-```bash
-python3 tools/sync_repo_state.py
-python3 tools/run_checks.py --all
-python3 tools/post_edit_validate.py metadata/canonical.json README.md
-python3 tools/repo_map.py --summary
-python3 tools/smoke_test.py
-```
-
-## Documentation
-
-- [Chinese overview](README_CN.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Migration](docs/MIGRATION.md)
-- [Audit](docs/AUDIT.md)
-- [LLM index](llms.txt)
+</details>

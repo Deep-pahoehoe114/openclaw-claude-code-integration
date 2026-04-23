@@ -47,8 +47,8 @@ def main() -> int:
     build_distribution_assets(resolver)
 
     readmes = [
-        (resolver.layout.workspace_root / "README.md", generated_by_locale["en"]),
-        (resolver.layout.workspace_root / "README_CN.md", generated_by_locale["zh-CN"]),
+        (resolver.layout.workspace_root / "README.md", generated_by_locale["zh-CN"]),
+        (resolver.layout.workspace_root / "README_EN.md", generated_by_locale["en"]),
         (resolver.layout.workspace_root / "INTEGRATION_SUMMARY.md", generated_by_locale["en"]),
     ]
 

@@ -1,11 +1,11 @@
-# Luminous Monolith
+# Monolithic Signal（整体信号）
 
-Luminous Monolith treats software infrastructure as a single engineered object rather than a collage of features. The composition should feel carved, not assembled: one dominant form, one dominant gesture, and enough restraint that every decision reads as deliberate. The final image must look meticulously crafted and reduced until only the strongest visual signals remain.
+Monolithic Signal 的目标不是把很多元素堆在一张图里，而是让产品价值像一个整体物体那样被看见。画面必须先建立一个强主视觉，再让其余信息作为支撑层次出现。第一眼应该先读到产品定位，而不是先看到装饰或局部技巧。最终成品必须显得经过大量推敲，像一张被反复打磨过的产品海报，而不是功能截图拼贴。
 
-Color should work like energy under pressure. The palette stays dark and controlled, then allows only a few calibrated emissions: a cold cyan glow for continuity, context, and system surface; a hotter ember slash for intervention, compatibility, and decisive routing. This contrast should feel expensive and precise, the product of deep expertise rather than decorative contrast.
+色彩只保留两种主要能量：偏暖的橙色负责表达治理、分发、决策和介入感；偏冷的青色负责表达上下文、运行时、兼容性和持续流动。深色背景提供足够的压缩感，让亮色像被控制过的能量一样释放出来。整体必须克制、精确、昂贵，体现出产品成熟度，而不是炫技。
 
-Scale is the main communication system. One oversized typographic mass should anchor the entire piece and create immediate recognition from a distance. Supporting information must stay secondary, carefully spaced, and surgically sparse. The work should look like it was refined for countless hours by someone operating at master level, with no line, margin, or proportion left accidental.
+构图要强调“大形优先”。每张图都只允许一个最强图形关系：主标题与产品柱体、六宫格亮点、模式卡片与验证链路、分发目标与适配器矩阵。其余细节都服务于这个主关系，不能抢戏。观者应当在几秒内知道这张图讲什么，再在停留时继续读到第二层信息。
 
-Geometry should suggest containment and transfer. A monolithic vertical volume holds the system surface, while a single diagonal vector cuts across it to imply activation and host-to-host movement. These forms should feel structural, as if the image were documenting a protocol artifact from an imaginary discipline. The result must be painstakingly tuned, with silence doing as much work as detail.
+文字全部承担视觉功能，而不只是说明功能。中文是主语言，字形需要有明确的重量、节奏和留白。标题负责冲击力，副标题负责定位，标签和芯片负责记忆点。每一个字距、边距、卡片厚度、线条密度都要显得经过耐心校准，体现出“这是一个真正被设计过的产品页面”。
 
-Typography is forceful but disciplined. Words act as visual architecture first and explanation second. The hierarchy should be unmistakable: a monumental mark, a restrained descriptor, and a few precisely placed labels. The finished artifact must read as premium, confident, and unmistakably product-grade, with craftsmanship visible in every interval and edge.
+整套素材必须像同一个系统的不同切面，而不是各自独立的海报。颜色、圆角、描边、阴影、排版密度都要统一，让 README 上的多张图片连起来形成一条完整叙事线：它是什么、亮点是什么、怎么运行、怎么分发。成品必须看起来专业、稳、清楚，而且有产品冲击力。
