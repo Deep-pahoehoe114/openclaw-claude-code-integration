@@ -40,17 +40,20 @@ def main() -> int:
     args = parser.parse_args()
 
     resolver = WorkspaceResolver.from_workspace(Path.cwd())
-    generated = render_generated_docs(resolver)
+    generated_by_locale = {
+        "en": render_generated_docs(resolver, locale="en"),
+        "zh-CN": render_generated_docs(resolver, locale="zh-CN"),
+    }
     build_distribution_assets(resolver)
 
     readmes = [
-        resolver.layout.workspace_root / "README.md",
-        resolver.layout.workspace_root / "README_CN.md",
-        resolver.layout.workspace_root / "INTEGRATION_SUMMARY.md",
+        (resolver.layout.workspace_root / "README.md", generated_by_locale["en"]),
+        (resolver.layout.workspace_root / "README_CN.md", generated_by_locale["zh-CN"]),
+        (resolver.layout.workspace_root / "INTEGRATION_SUMMARY.md", generated_by_locale["en"]),
     ]
 
     if args.check:
-        for path in readmes:
+        for path, generated in readmes:
             original = path.read_text(encoding="utf-8")
             updated = original
             updated = replace_marked_section(updated, "generated-skills", generated["skills_section"])
@@ -62,7 +65,7 @@ def main() -> int:
                 return 1
         return 0
 
-    for path in readmes:
+    for path, generated in readmes:
         sync_markdown_file(path, generated)
     return 0
 

@@ -10,6 +10,24 @@ from oeck.adapters.distribution import ClaudeBundleAdapter, CodexBundleAdapter, 
 from oeck.runtime_core.workspace import WorkspaceResolver
 
 
+def _normalize_locale(locale: str | None) -> str:
+    if not locale:
+        return "en"
+    return locale.replace("_", "-").lower()
+
+
+def _localized_text(item: dict, key: str, locale: str) -> str:
+    normalized = _normalize_locale(locale)
+    if normalized.startswith("zh"):
+        return item.get(f"{key}_zh", item[key])
+    return item[key]
+
+
+def _locale_suffix(locale: str) -> str:
+    normalized = _normalize_locale(locale)
+    return "" if normalized == "en" else f".{normalized}"
+
+
 def _count_tests(root: Path) -> tuple[int, list[str]]:
     total = 0
     inventory = []
@@ -59,12 +77,12 @@ def _directory_tree(root: Path) -> str:
     return "\n".join(lines)
 
 
-def render_generated_docs(resolver: WorkspaceResolver | None = None) -> dict:
+def render_generated_docs(resolver: WorkspaceResolver | None = None, locale: str = "en") -> dict:
     resolver = resolver or WorkspaceResolver()
     root = resolver.layout.workspace_root
     metadata = json.loads((root / "metadata" / "canonical.json").read_text(encoding="utf-8"))
     skill_lines = [
-        f"- `{item['id']}`: {item['summary']}"
+        f"- `{item['id']}`: {_localized_text(item, 'summary', locale)}"
         for item in metadata["skills"]
     ]
     test_total, test_inventory = _count_tests(root)
@@ -75,15 +93,17 @@ def render_generated_docs(resolver: WorkspaceResolver | None = None) -> dict:
         "tests_section": "\n".join(test_inventory),
         "tree_section": _directory_tree(root),
         "adapters_section": "\n".join(
-            f"- `{item['id']}`: {item['summary']}" for item in metadata["adapters"]
+            f"- `{item['id']}`: {_localized_text(item, 'summary', locale)}"
+            for item in metadata["adapters"]
         ),
     }
     docs_generated = root / "docs" / "generated"
     docs_generated.mkdir(parents=True, exist_ok=True)
-    (docs_generated / "skills.md").write_text(generated["skills_section"] + "\n", encoding="utf-8")
-    (docs_generated / "tests.md").write_text(generated["tests_section"] + "\n", encoding="utf-8")
-    (docs_generated / "tree.md").write_text(generated["tree_section"] + "\n", encoding="utf-8")
-    (docs_generated / "adapters.md").write_text(generated["adapters_section"] + "\n", encoding="utf-8")
+    suffix = _locale_suffix(locale)
+    (docs_generated / f"skills{suffix}.md").write_text(generated["skills_section"] + "\n", encoding="utf-8")
+    (docs_generated / f"tests{suffix}.md").write_text(generated["tests_section"] + "\n", encoding="utf-8")
+    (docs_generated / f"tree{suffix}.md").write_text(generated["tree_section"] + "\n", encoding="utf-8")
+    (docs_generated / f"adapters{suffix}.md").write_text(generated["adapters_section"] + "\n", encoding="utf-8")
     return generated
 
 

@@ -1,91 +1,98 @@
 # OpenClaw Enhancement & Compatibility Kit
 
-OpenClaw Enhancement & Compatibility Kit 现在不再只是“把 Claude Code 思路移植到 OpenClaw 的 skill 仓库”，而是一个面向 OpenClaw / Claude / Codex 的治理、兼容、运行时增强层。它保留现有 `skills/` 作为内容资产，同时新增统一策略、统一上下文、统一分发、统一观测、统一适配器。
+<p align="center">
+  <img src="docs/assets/oeck-github-banner.png" alt="OECK GitHub 横幅" width="100%" />
+</p>
 
-## 这个仓库现在是什么
+<p align="center">
+  面向 OpenClaw / Claude / Codex 的治理、兼容、运行时增强层。<br/>
+  Governance, compatibility, and runtime enhancement for OpenClaw, Claude, and Codex.
+</p>
 
-- 一个默认本地可跑的运行时增强层
-- 一个面向 OpenClaw 原生插件、Claude bundle、Codex bundle 的兼容分发层
-- 一个围绕模式、权限、checks、post-edit validation 的治理层
-- 一个对旧 skill 仓库友好的迁移升级层
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_CN.md">简体中文</a> ·
+  <a href="docs/ARCHITECTURE.md">架构说明</a> ·
+  <a href="docs/MIGRATION.md">迁移说明</a> ·
+  <a href="docs/AUDIT.md">审计报告</a>
+</p>
 
-## 核心内置能力
+<p align="center">
+  <a href=".github/workflows/ci.yml">CI workflow</a> ·
+  <img src="https://img.shields.io/badge/hosts-OpenClaw%20%7C%20Claude%20%7C%20Codex-10202a" alt="Hosts" />
+  <img src="https://img.shields.io/badge/runtime-local--first-0ea5b7" alt="Local first" />
+  <img src="https://img.shields.io/badge/distribution-plugin%20%7C%20bundle%20%7C%20hooks-f38f5b" alt="Distribution targets" />
+</p>
 
-- `runtime core`：`WorkspaceResolver`、`SessionResolver`、`PolicyEngine`、`ContextEngine`、`MemoryProvider`、`RuleStore`、`SandboxProvider`、`TraceExporter`
-- `content layer`：现有 `skills/` 全量保留
-- `distribution`：从 `metadata/canonical.json` 统一生成 manifest / bundle
-- `checks`：markdown 定义的检查，可在本地与 CI 共用
+OpenClaw Enhancement & Compatibility Kit 不再只是零散 skills 的集合，而是一个产品化的增强层。它保留 `skills/` 作为内容资产，再往上叠加运行时核心、策略系统、上下文系统、适配器、检查机制，以及面向多个宿主的分发能力。
 
-## 可选 Adapter
+## 为什么是 OECK
 
-<!-- generated-adapters:start -->
-- `openclaw-native`: Native OpenClaw plugin metadata and bundle output.
-- `claude-bundle`: Claude-compatible bundle manifest and command roots.
-- `codex-bundle`: Codex-compatible bundle manifest and hook packs.
-- `lossless-context`: Optional context preservation backend for compaction workflows.
-- `observability`: Structured event exporter with optional Opik/Langfuse bridges.
-- `temporal-memory`: Optional temporal memory interface with local stub implementation.
-- `remote-sandbox`: Optional remote sandbox provider interface.
-<!-- generated-adapters:end -->
+- 保留 OpenClaw 原生工作流，但不再把能力绑死在单一宿主目录结构上。
+- 以一份 canonical metadata 为事实源，统一生成 manifest、README 清单和 bundle。
+- 默认本地可运行，远程沙箱、时序记忆、可观测性等能力按 adapter 按需开启。
+- 现有 skills 继续可用，但统一纳入策略、上下文、分发和追踪体系。
 
-## 模式系统
+## 支持的宿主目标
 
-- `ask`：只读、禁网、严格审批
-- `plan`：规划优先，允许受控执行
-- `build`：默认开发模式，允许修改和验证
-- `debug`：偏诊断，保留 trace 与测试能力
-- `review`：只读 review / checks
-- `auto`：由 profile 与 sandbox provider 决定自动化边界
+- `OpenClaw 原生插件`：由 [openclaw.plugin.json](openclaw.plugin.json) 生成
+- `Claude Bundle`：由 [.claude-plugin/plugin.json](.claude-plugin/plugin.json) 生成
+- `Codex Bundle`：由 [.codex-plugin/plugin.json](.codex-plugin/plugin.json) 生成
+- `GitHub 展示素材`：横幅文件在 [docs/assets/oeck-github-banner.png](docs/assets/oeck-github-banner.png)
 
-## 安装方式
+## 你会得到什么
 
-### OpenClaw 原生插件
+- `运行时核心`：`WorkspaceResolver`、`SessionResolver`、`PolicyEngine`、`ContextEngine`、`MemoryProvider`、`RuleStore`、`SandboxProvider`、`TraceExporter`
+- `模式系统`：`ask`、`plan`、`build`、`debug`、`review`、`auto`
+- `检查与验证`：基于 markdown 的 checks，以及本地和 CI 复用的 post-edit validation
+- `适配器层`：OpenClaw 原生、Claude bundle、Codex bundle、observability、lossless context、temporal memory、remote sandbox
+- `内容层`：现有技能完整保留在 `skills/`
 
-使用根目录生成的 `openclaw.plugin.json`：
-
-```bash
-python3 tools/sync_repo_state.py
-cat openclaw.plugin.json
-```
-
-### Claude 兼容 Bundle
-
-使用 `.claude-plugin/plugin.json` 和 bundle 内的 commands/settings：
+## 快速开始
 
 ```bash
 python3 tools/sync_repo_state.py
-cat .claude-plugin/plugin.json
+python3 tools/run_checks.py --all
+python3 tools/post_edit_validate.py
+python3 tools/smoke_test.py
 ```
 
-### Codex 兼容 Bundle
+仓库默认走本地优先模式。外部集成全部通过 adapter 接口和 feature flags 接入，所以干净 checkout 不需要云端凭证也能直接运行。
 
-使用 `.codex-plugin/plugin.json` 和 `.codex-plugin/hooks/post-edit-validation/`：
+## 内置能力与可选能力
 
-```bash
-python3 tools/sync_repo_state.py
-cat .codex-plugin/plugin.json
-```
-
-### 开发态安装
-
-开发态建议直接保留源码仓库，通过 link/install 方式接入宿主。手工 `cp -r skills/*` 仍可作为兼容 fallback，但不再是主安装方案。
+- 内置：runtime core、模式 profile、插件和 bundle 生成、checks runner、post-edit validation、repo map、smoke tests
+- 可选：Opik 或未来 Langfuse 导出器、时序记忆后端、远程沙箱、lossless context 后端
+- 迁移友好：旧 `skills/` 入口仍通过 resolver-backed shim 保持兼容
 
 ## Skills
 
 <!-- generated-skills:start -->
-- `behavior-analyzer`: Session health analysis and anomaly detection.
-- `cache-monitor`: Static and dynamic prompt layer cache drift monitoring.
-- `compact-guardian`: Circuit breaker and recovery flow for failed compactions.
-- `evolve`: Rule extraction from reflections and learnings.
-- `fusion-engine`: Multi-source context fusion for decision support.
-- `knowledge-federation`: Rule sharing, federation, and long-term optimization.
-- `memory-compaction`: Memory pruning, merging, and optional lossless backends.
-- `rule-optimizer`: Effectiveness scoring and A/B rule refinement.
-- `safe-command-execution`: AST-based shell command inspection.
-- `self-eval`: Reflection capture and learnings persistence.
-- `smart-compact`: Session compaction strategy and transcript rewriting.
-- `yolo-permissions`: Command risk scoring and permission classification.
+- `behavior-analyzer`: 会话健康分析与异常检测。
+- `cache-monitor`: 静态与动态提示层缓存漂移监控。
+- `compact-guardian`: 面向压缩失败场景的熔断与恢复流程。
+- `evolve`: 从反思与学习记录中提炼规则。
+- `fusion-engine`: 面向决策支持的多源上下文融合。
+- `knowledge-federation`: 规则共享、联邦协同与长期优化。
+- `memory-compaction`: 记忆裁剪、合并与可选无损后端。
+- `rule-optimizer`: 规则效果评分与 A/B 精炼。
+- `safe-command-execution`: 基于 AST 的 shell 命令安全检查。
+- `self-eval`: 反思采集与学习沉淀。
+- `smart-compact`: 会话压缩策略与转录重写。
+- `yolo-permissions`: 命令风险评分与权限分类。
 <!-- generated-skills:end -->
+
+## Adapters
+
+<!-- generated-adapters:start -->
+- `openclaw-native`: OpenClaw 原生插件元数据与 bundle 产物。
+- `claude-bundle`: Claude 兼容 bundle manifest 与命令根目录。
+- `codex-bundle`: Codex 兼容 bundle manifest 与 hook 包。
+- `lossless-context`: 用于压缩流程的可选上下文保真后端。
+- `observability`: 结构化事件导出接口，可选接 Opik/Langfuse。
+- `temporal-memory`: 可选时序记忆接口，默认提供本地 stub。
+- `remote-sandbox`: 可选远程沙箱 provider 接口。
+<!-- generated-adapters:end -->
 
 ## 测试清单
 
@@ -98,7 +105,7 @@ cat .codex-plugin/plugin.json
 - `skills/knowledge-federation/tests/test_long_term_evolution.py`: 17
 - `skills/knowledge-federation/tests/test_rule_recommender.py`: 20
 - `skills/rule-optimizer/tests/test_rule_optimizer.py`: 9
-- `tests/distribution/test_sync_repo_state.py`: 1
+- `tests/distribution/test_sync_repo_state.py`: 2
 - `tests/runtime_core/test_policy_engine.py`: 2
 - `tests/runtime_core/test_validation.py`: 2
 - `tests/runtime_core/test_workspace_resolver.py`: 2
@@ -113,7 +120,7 @@ cat .codex-plugin/plugin.json
 - `tests/test_health_check.sh`: 1
 <!-- generated-tests:end -->
 
-## 目录概览
+## 仓库结构
 
 <!-- generated-tree:start -->
 - `metadata/`
@@ -146,6 +153,7 @@ cat .codex-plugin/plugin.json
   - `docs/ARCHITECTURE.md`
   - `docs/AUDIT.md`
   - `docs/MIGRATION.md`
+  - `docs/assets`
   - `docs/generated`
 - `.openclaw/`
   - `.openclaw/checks`
@@ -173,6 +181,7 @@ cat .codex-plugin/plugin.json
   - `tests/test_self_eval.py`
   - `tests/test_yolo_classifier.py`
 - `tools/`
+  - `tools/generate_banner.py`
   - `tools/health_check.sh`
   - `tools/health_check_config.json`
   - `tools/post_edit_validate.py`
@@ -184,18 +193,19 @@ cat .codex-plugin/plugin.json
   - `.github/workflows`
 <!-- generated-tree:end -->
 
-## 开发流程
+## 维护流程
 
 ```bash
 python3 tools/sync_repo_state.py
 python3 tools/run_checks.py --all
-python3 tools/post_edit_validate.py
+python3 tools/post_edit_validate.py metadata/canonical.json README.md README_CN.md
 python3 tools/repo_map.py --summary
 python3 tools/smoke_test.py
 ```
 
-## 文档
+## 文档入口
 
+- [English overview](README.md)
 - [架构说明](docs/ARCHITECTURE.md)
 - [迁移说明](docs/MIGRATION.md)
 - [审计报告](docs/AUDIT.md)

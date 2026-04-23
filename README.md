@@ -1,74 +1,69 @@
 # OpenClaw Enhancement & Compatibility Kit
 
-OpenClaw Enhancement & Compatibility Kit is a governance, compatibility, and runtime enhancement layer for OpenClaw, Claude, and Codex. It keeps the existing `skills/` library as content assets, but upgrades the repository into a productized runtime with unified policy, unified context, unified distribution, unified observability, and optional adapters.
+<p align="center">
+  <img src="docs/assets/oeck-github-banner.png" alt="OECK GitHub banner" width="100%" />
+</p>
 
-## What This Repository Is
+<p align="center">
+  Governance, compatibility, and runtime enhancement for OpenClaw, Claude, and Codex.<br/>
+  面向 OpenClaw / Claude / Codex 的治理、兼容、运行时增强层。
+</p>
 
-- A local-first runtime enhancement layer.
-- A compatibility bridge for OpenClaw native plugins, Claude bundles, and Codex bundles.
-- A governance surface for modes, permission policy, checks, and post-edit validation.
-- A migration-safe wrapper around the existing skills repository.
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_CN.md">简体中文</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/MIGRATION.md">Migration</a> ·
+  <a href="docs/AUDIT.md">Audit</a>
+</p>
 
-## Core Built-ins
+<p align="center">
+  <a href=".github/workflows/ci.yml">CI workflow</a> ·
+  <img src="https://img.shields.io/badge/hosts-OpenClaw%20%7C%20Claude%20%7C%20Codex-10202a" alt="Hosts" />
+  <img src="https://img.shields.io/badge/runtime-local--first-0ea5b7" alt="Local first" />
+  <img src="https://img.shields.io/badge/distribution-plugin%20%7C%20bundle%20%7C%20hooks-f38f5b" alt="Distribution targets" />
+</p>
 
-- `runtime core`: `WorkspaceResolver`, `SessionResolver`, `PolicyEngine`, `ContextEngine`, `MemoryProvider`, `RuleStore`, `SandboxProvider`, `TraceExporter`
-- `content layer`: the existing skills remain intact under `skills/`
-- `distribution`: manifests and bundle metadata are generated from `metadata/canonical.json`
-- `checks`: markdown-defined validation reused locally and in CI
+OpenClaw Enhancement & Compatibility Kit turns a loose skills collection into a coherent product surface. It keeps `skills/` as reusable content, then layers a runtime core, policy system, context system, adapters, checks, and multi-host distribution on top.
 
-## Optional Adapters
+## Why OECK
 
-<!-- generated-adapters:start -->
-- `openclaw-native`: Native OpenClaw plugin metadata and bundle output.
-- `claude-bundle`: Claude-compatible bundle manifest and command roots.
-- `codex-bundle`: Codex-compatible bundle manifest and hook packs.
-- `lossless-context`: Optional context preservation backend for compaction workflows.
-- `observability`: Structured event exporter with optional Opik/Langfuse bridges.
-- `temporal-memory`: Optional temporal memory interface with local stub implementation.
-- `remote-sandbox`: Optional remote sandbox provider interface.
-<!-- generated-adapters:end -->
+- Keep OpenClaw-native workflows, but stop coupling everything to one host layout.
+- Ship one canonical metadata source and generate manifests, README inventories, and bundles from it.
+- Run locally by default, then enable remote sandboxing, temporal memory, and observability adapters only when needed.
+- Preserve existing skills, but put them behind unified policy, unified context, unified distribution, and unified tracing.
 
-## Modes
+## Host Targets
 
-- `ask`: read-only, no network, strict approval
-- `plan`: scoped planning with allowlisted execution
-- `build`: default implementation mode with validation
-- `debug`: diagnosis-first mode with trace support
-- `review`: read-only review and checks
-- `auto`: profile-driven automation with sandbox hooks
+- `OpenClaw Native Plugin`: generated from [openclaw.plugin.json](openclaw.plugin.json)
+- `Claude Bundle`: generated from [.claude-plugin/plugin.json](.claude-plugin/plugin.json)
+- `Codex Bundle`: generated from [.codex-plugin/plugin.json](.codex-plugin/plugin.json)
+- `GitHub presentation`: banner asset lives at [docs/assets/oeck-github-banner.png](docs/assets/oeck-github-banner.png)
 
-## Installation
+## What You Get
 
-### OpenClaw Native Plugin
+- `Runtime core`: `WorkspaceResolver`, `SessionResolver`, `PolicyEngine`, `ContextEngine`, `MemoryProvider`, `RuleStore`, `SandboxProvider`, `TraceExporter`
+- `Mode profiles`: `ask`, `plan`, `build`, `debug`, `review`, `auto`
+- `Checks and validation`: markdown-based checks plus post-edit validation runners for local and CI reuse
+- `Adapters`: OpenClaw-native, Claude bundle, Codex bundle, observability, lossless context, temporal memory, remote sandbox
+- `Content layer`: the existing skills stay intact under `skills/`
 
-Use the generated root manifest:
-
-```bash
-python3 tools/sync_repo_state.py
-cat openclaw.plugin.json
-```
-
-### Claude Bundle
-
-Use `.claude-plugin/plugin.json` and the bundled commands/settings:
+## Quick Start
 
 ```bash
 python3 tools/sync_repo_state.py
-cat .claude-plugin/plugin.json
+python3 tools/run_checks.py --all
+python3 tools/post_edit_validate.py
+python3 tools/smoke_test.py
 ```
 
-### Codex Bundle
+The repository is local-first by default. Optional external integrations stay behind adapter interfaces and feature flags, so a clean checkout still runs without cloud credentials.
 
-Use `.codex-plugin/plugin.json` and the hook pack under `.codex-plugin/hooks/post-edit-validation/`:
+## Built-In vs Optional
 
-```bash
-python3 tools/sync_repo_state.py
-cat .codex-plugin/plugin.json
-```
-
-### Development Install
-
-For local development, keep the repo checked out and link or install the appropriate manifest/bundle into your host environment. Manual `cp -r skills/*` remains possible for legacy setups, but it is no longer the primary path.
+- Built in: runtime core, mode profiles, plugin and bundle generation, checks runner, post-edit validation, repo map, smoke tests
+- Optional by adapter: Opik or future Langfuse exporters, temporal memory backends, remote sandboxes, lossless context backends
+- Migration friendly: legacy `skills/` entrypoints remain available through resolver-backed compatibility shims
 
 ## Skills
 
@@ -87,7 +82,19 @@ For local development, keep the repo checked out and link or install the appropr
 - `yolo-permissions`: Command risk scoring and permission classification.
 <!-- generated-skills:end -->
 
-## Tests
+## Adapters
+
+<!-- generated-adapters:start -->
+- `openclaw-native`: Native OpenClaw plugin metadata and bundle output.
+- `claude-bundle`: Claude-compatible bundle manifest and command roots.
+- `codex-bundle`: Codex-compatible bundle manifest and hook packs.
+- `lossless-context`: Optional context preservation backend for compaction workflows.
+- `observability`: Structured event exporter with optional Opik/Langfuse bridges.
+- `temporal-memory`: Optional temporal memory interface with local stub implementation.
+- `remote-sandbox`: Optional remote sandbox provider interface.
+<!-- generated-adapters:end -->
+
+## Test Inventory
 
 <!-- generated-tests:start -->
 - `skills/behavior-analyzer/tests/test_behavior_analyzer.py`: 10
@@ -98,7 +105,7 @@ For local development, keep the repo checked out and link or install the appropr
 - `skills/knowledge-federation/tests/test_long_term_evolution.py`: 17
 - `skills/knowledge-federation/tests/test_rule_recommender.py`: 20
 - `skills/rule-optimizer/tests/test_rule_optimizer.py`: 9
-- `tests/distribution/test_sync_repo_state.py`: 1
+- `tests/distribution/test_sync_repo_state.py`: 2
 - `tests/runtime_core/test_policy_engine.py`: 2
 - `tests/runtime_core/test_validation.py`: 2
 - `tests/runtime_core/test_workspace_resolver.py`: 2
@@ -113,7 +120,7 @@ For local development, keep the repo checked out and link or install the appropr
 - `tests/test_health_check.sh`: 1
 <!-- generated-tests:end -->
 
-## Directory Overview
+## Repository Layout
 
 <!-- generated-tree:start -->
 - `metadata/`
@@ -146,6 +153,7 @@ For local development, keep the repo checked out and link or install the appropr
   - `docs/ARCHITECTURE.md`
   - `docs/AUDIT.md`
   - `docs/MIGRATION.md`
+  - `docs/assets`
   - `docs/generated`
 - `.openclaw/`
   - `.openclaw/checks`
@@ -173,6 +181,7 @@ For local development, keep the repo checked out and link or install the appropr
   - `tests/test_self_eval.py`
   - `tests/test_yolo_classifier.py`
 - `tools/`
+  - `tools/generate_banner.py`
   - `tools/health_check.sh`
   - `tools/health_check_config.json`
   - `tools/post_edit_validate.py`
@@ -184,19 +193,20 @@ For local development, keep the repo checked out and link or install the appropr
   - `.github/workflows`
 <!-- generated-tree:end -->
 
-## Development Workflow
+## Maintainer Workflow
 
 ```bash
 python3 tools/sync_repo_state.py
 python3 tools/run_checks.py --all
-python3 tools/post_edit_validate.py
+python3 tools/post_edit_validate.py metadata/canonical.json README.md
 python3 tools/repo_map.py --summary
 python3 tools/smoke_test.py
 ```
 
-## Docs
+## Documentation
 
+- [Chinese overview](README_CN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Migration](docs/MIGRATION.md)
 - [Audit](docs/AUDIT.md)
-- [LLM Index](llms.txt)
+- [LLM index](llms.txt)

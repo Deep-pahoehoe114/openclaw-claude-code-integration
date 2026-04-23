@@ -1,0 +1,7 @@
+- `openclaw-native`: OpenClaw 原生插件元数据与 bundle 产物。
+- `claude-bundle`: Claude 兼容 bundle manifest 与命令根目录。
+- `codex-bundle`: Codex 兼容 bundle manifest 与 hook 包。
+- `lossless-context`: 用于压缩流程的可选上下文保真后端。
+- `observability`: 结构化事件导出接口，可选接 Opik/Langfuse。
+- `temporal-memory`: 可选时序记忆接口，默认提供本地 stub。
+- `remote-sandbox`: 可选远程沙箱 provider 接口。

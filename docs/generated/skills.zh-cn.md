@@ -1,0 +1,12 @@
+- `behavior-analyzer`: 会话健康分析与异常检测。
+- `cache-monitor`: 静态与动态提示层缓存漂移监控。
+- `compact-guardian`: 面向压缩失败场景的熔断与恢复流程。
+- `evolve`: 从反思与学习记录中提炼规则。
+- `fusion-engine`: 面向决策支持的多源上下文融合。
+- `knowledge-federation`: 规则共享、联邦协同与长期优化。
+- `memory-compaction`: 记忆裁剪、合并与可选无损后端。
+- `rule-optimizer`: 规则效果评分与 A/B 精炼。
+- `safe-command-execution`: 基于 AST 的 shell 命令安全检查。
+- `self-eval`: 反思采集与学习沉淀。
+- `smart-compact`: 会话压缩策略与转录重写。
+- `yolo-permissions`: 命令风险评分与权限分类。

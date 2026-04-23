@@ -3,6 +3,7 @@
     "id": "openclaw-enhancement-kit",
     "name": "OpenClaw Enhancement & Compatibility Kit",
     "tagline": "A governance, compatibility, and runtime enhancement layer for OpenClaw, Claude, and Codex.",
+    "tagline_zh": "一个面向 OpenClaw、Claude、Codex 的治理、兼容、运行时增强层。",
     "version": "0.2.0",
     "license": "MIT",
     "python_requires": ">=3.10"
@@ -26,7 +27,8 @@
       "path": "skills/behavior-analyzer",
       "entry": "skills/behavior-analyzer/scripts/behavior_analyzer.py",
       "category": "content",
-      "summary": "Session health analysis and anomaly detection."
+      "summary": "Session health analysis and anomaly detection.",
+      "summary_zh": "会话健康分析与异常检测。"
     },
     {
       "id": "cache-monitor",
@@ -34,7 +36,8 @@
       "path": "skills/cache-monitor",
       "entry": "skills/cache-monitor/scripts/cache_monitor.py",
       "category": "content",
-      "summary": "Static and dynamic prompt layer cache drift monitoring."
+      "summary": "Static and dynamic prompt layer cache drift monitoring.",
+      "summary_zh": "静态与动态提示层缓存漂移监控。"
     },
     {
       "id": "compact-guardian",
@@ -42,7 +45,8 @@
       "path": "skills/compact-guardian",
       "entry": "skills/compact-guardian/scripts/compact_guardian.py",
       "category": "content",
-      "summary": "Circuit breaker and recovery flow for failed compactions."
+      "summary": "Circuit breaker and recovery flow for failed compactions.",
+      "summary_zh": "面向压缩失败场景的熔断与恢复流程。"
     },
     {
       "id": "evolve",
@@ -50,7 +54,8 @@
       "path": "skills/evolve",
       "entry": "skills/evolve/scripts/evolve.py",
       "category": "content",
-      "summary": "Rule extraction from reflections and learnings."
+      "summary": "Rule extraction from reflections and learnings.",
+      "summary_zh": "从反思与学习记录中提炼规则。"
     },
     {
       "id": "fusion-engine",
@@ -58,7 +63,8 @@
       "path": "skills/fusion-engine",
       "entry": "skills/fusion-engine/scripts/fusion_engine.py",
       "category": "content",
-      "summary": "Multi-source context fusion for decision support."
+      "summary": "Multi-source context fusion for decision support.",
+      "summary_zh": "面向决策支持的多源上下文融合。"
     },
     {
       "id": "knowledge-federation",
@@ -66,7 +72,8 @@
       "path": "skills/knowledge-federation",
       "entry": "skills/knowledge-federation/scripts/knowledge_federation.py",
       "category": "content",
-      "summary": "Rule sharing, federation, and long-term optimization."
+      "summary": "Rule sharing, federation, and long-term optimization.",
+      "summary_zh": "规则共享、联邦协同与长期优化。"
     },
     {
       "id": "memory-compaction",
@@ -74,7 +81,8 @@
       "path": "skills/memory-compaction",
       "entry": "skills/memory-compaction/scripts/memory_compaction.py",
       "category": "content",
-      "summary": "Memory pruning, merging, and optional lossless backends."
+      "summary": "Memory pruning, merging, and optional lossless backends.",
+      "summary_zh": "记忆裁剪、合并与可选无损后端。"
     },
     {
       "id": "rule-optimizer",
@@ -82,7 +90,8 @@
       "path": "skills/rule-optimizer",
       "entry": "skills/rule-optimizer/scripts/rule_optimizer.py",
       "category": "content",
-      "summary": "Effectiveness scoring and A/B rule refinement."
+      "summary": "Effectiveness scoring and A/B rule refinement.",
+      "summary_zh": "规则效果评分与 A/B 精炼。"
     },
     {
       "id": "safe-command-execution",
@@ -90,7 +99,8 @@
       "path": "skills/safe-command-execution",
       "entry": "skills/safe-command-execution/scripts/safe_ast_check.py",
       "category": "content",
-      "summary": "AST-based shell command inspection."
+      "summary": "AST-based shell command inspection.",
+      "summary_zh": "基于 AST 的 shell 命令安全检查。"
     },
     {
       "id": "self-eval",
@@ -98,7 +108,8 @@
       "path": "skills/self-eval",
       "entry": "skills/self-eval/scripts/self_eval.py",
       "category": "content",
-      "summary": "Reflection capture and learnings persistence."
+      "summary": "Reflection capture and learnings persistence.",
+      "summary_zh": "反思采集与学习沉淀。"
     },
     {
       "id": "smart-compact",
@@ -106,7 +117,8 @@
       "path": "skills/smart-compact",
       "entry": "skills/smart-compact/scripts/smart_compact.py",
       "category": "content",
-      "summary": "Session compaction strategy and transcript rewriting."
+      "summary": "Session compaction strategy and transcript rewriting.",
+      "summary_zh": "会话压缩策略与转录重写。"
     },
     {
       "id": "yolo-permissions",
@@ -114,7 +126,8 @@
       "path": "skills/yolo-permissions",
       "entry": "skills/yolo-permissions/scripts/yolo_classifier.py",
       "category": "content",
-      "summary": "Command risk scoring and permission classification."
+      "summary": "Command risk scoring and permission classification.",
+      "summary_zh": "命令风险评分与权限分类。"
     }
   ],
   "adapters": [
@@ -123,49 +136,56 @@
       "kind": "distribution",
       "default_enabled": true,
       "optional": false,
-      "summary": "Native OpenClaw plugin metadata and bundle output."
+      "summary": "Native OpenClaw plugin metadata and bundle output.",
+      "summary_zh": "OpenClaw 原生插件元数据与 bundle 产物。"
     },
     {
       "id": "claude-bundle",
       "kind": "distribution",
       "default_enabled": true,
       "optional": false,
-      "summary": "Claude-compatible bundle manifest and command roots."
+      "summary": "Claude-compatible bundle manifest and command roots.",
+      "summary_zh": "Claude 兼容 bundle manifest 与命令根目录。"
     },
     {
       "id": "codex-bundle",
       "kind": "distribution",
       "default_enabled": true,
       "optional": false,
-      "summary": "Codex-compatible bundle manifest and hook packs."
+      "summary": "Codex-compatible bundle manifest and hook packs.",
+      "summary_zh": "Codex 兼容 bundle manifest 与 hook 包。"
     },
     {
       "id": "lossless-context",
       "kind": "runtime",
       "default_enabled": false,
       "optional": true,
-      "summary": "Optional context preservation backend for compaction workflows."
+      "summary": "Optional context preservation backend for compaction workflows.",
+      "summary_zh": "用于压缩流程的可选上下文保真后端。"
     },
     {
       "id": "observability",
       "kind": "runtime",
       "default_enabled": true,
       "optional": true,
-      "summary": "Structured event exporter with optional Opik/Langfuse bridges."
+      "summary": "Structured event exporter with optional Opik/Langfuse bridges.",
+      "summary_zh": "结构化事件导出接口，可选接 Opik/Langfuse。"
     },
     {
       "id": "temporal-memory",
       "kind": "runtime",
       "default_enabled": false,
       "optional": true,
-      "summary": "Optional temporal memory interface with local stub implementation."
+      "summary": "Optional temporal memory interface with local stub implementation.",
+      "summary_zh": "可选时序记忆接口，默认提供本地 stub。"
     },
     {
       "id": "remote-sandbox",
       "kind": "runtime",
       "default_enabled": false,
       "optional": true,
-      "summary": "Optional remote sandbox provider interface."
+      "summary": "Optional remote sandbox provider interface.",
+      "summary_zh": "可选远程沙箱 provider 接口。"
     }
   ],
   "modes": [

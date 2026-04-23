@@ -30,7 +30,7 @@ This repository has been upgraded from a loose Claude-Code-style skills pack int
 - `skills/knowledge-federation/tests/test_long_term_evolution.py`: 17
 - `skills/knowledge-federation/tests/test_rule_recommender.py`: 20
 - `skills/rule-optimizer/tests/test_rule_optimizer.py`: 9
-- `tests/distribution/test_sync_repo_state.py`: 1
+- `tests/distribution/test_sync_repo_state.py`: 2
 - `tests/runtime_core/test_policy_engine.py`: 2
 - `tests/runtime_core/test_validation.py`: 2
 - `tests/runtime_core/test_workspace_resolver.py`: 2
@@ -90,6 +90,7 @@ This repository has been upgraded from a loose Claude-Code-style skills pack int
   - `docs/ARCHITECTURE.md`
   - `docs/AUDIT.md`
   - `docs/MIGRATION.md`
+  - `docs/assets`
   - `docs/generated`
 - `.openclaw/`
   - `.openclaw/checks`
@@ -117,6 +118,7 @@ This repository has been upgraded from a loose Claude-Code-style skills pack int
   - `tests/test_self_eval.py`
   - `tests/test_yolo_classifier.py`
 - `tools/`
+  - `tools/generate_banner.py`
   - `tools/health_check.sh`
   - `tools/health_check_config.json`
   - `tools/post_edit_validate.py`
