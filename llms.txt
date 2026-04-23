@@ -1,0 +1,19 @@
+# OpenClaw Enhancement & Compatibility Kit
+
+Primary index for LLMs and agents.
+
+- `README.md`: product overview and installation story
+- `README_CN.md`: Chinese overview
+- `docs/ARCHITECTURE.md`: architecture and layer model
+- `docs/MIGRATION.md`: migration guide from the legacy skills repo
+- `docs/AUDIT.md`: repository audit and mismatch summary
+- `metadata/canonical.json`: canonical source of truth for skills, adapters, modes, and distribution
+- `oeck/runtime_core/`: policy, context, memory, session, sandbox, tracing, workspace resolution
+- `oeck/adapters/`: distribution and optional enhancement adapters
+- `skills/`: content assets preserved for compatibility
+- `.openclaw/checks/`: markdown-based validation rules
+- `tools/sync_repo_state.py`: generates manifests and README sections
+- `tools/run_checks.py`: executes shared checks
+- `tools/post_edit_validate.py`: post-edit validation pipeline
+- `tools/repo_map.py`: repo map and codebase summary
+- `tools/smoke_test.py`: local smoke test

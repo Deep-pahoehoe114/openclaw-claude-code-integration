@@ -1,0 +1,12 @@
+- `behavior-analyzer`: Session health analysis and anomaly detection.
+- `cache-monitor`: Static and dynamic prompt layer cache drift monitoring.
+- `compact-guardian`: Circuit breaker and recovery flow for failed compactions.
+- `evolve`: Rule extraction from reflections and learnings.
+- `fusion-engine`: Multi-source context fusion for decision support.
+- `knowledge-federation`: Rule sharing, federation, and long-term optimization.
+- `memory-compaction`: Memory pruning, merging, and optional lossless backends.
+- `rule-optimizer`: Effectiveness scoring and A/B rule refinement.
+- `safe-command-execution`: AST-based shell command inspection.
+- `self-eval`: Reflection capture and learnings persistence.
+- `smart-compact`: Session compaction strategy and transcript rewriting.
+- `yolo-permissions`: Command risk scoring and permission classification.

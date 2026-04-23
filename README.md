@@ -1,280 +1,202 @@
-<div align="center">
+# OpenClaw Enhancement & Compatibility Kit
 
-# 🦞 OpenClaw × Claude Code · Elite Integration
+OpenClaw Enhancement & Compatibility Kit is a governance, compatibility, and runtime enhancement layer for OpenClaw, Claude, and Codex. It keeps the existing `skills/` library as content assets, but upgrades the repository into a productized runtime with unified policy, unified context, unified distribution, unified observability, and optional adapters.
 
-**[OpenClaw](https://github.com/openclaw/openclaw) AI Agent 的 Claude Code 工程实践整合**
+## What This Repository Is
 
-*把 Claude Code 源码里最有价值的工程实践，移植到你的个人 AI 助手。*
+- A local-first runtime enhancement layer.
+- A compatibility bridge for OpenClaw native plugins, Claude bundles, and Codex bundles.
+- A governance surface for modes, permission policy, checks, and post-edit validation.
+- A migration-safe wrapper around the existing skills repository.
 
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-Ready-blue)](https://github.com/openclaw/openclaw)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Source%20Leaked-green)](https://github.com/Fried-Chicken/Claude-Code)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/YOUR_GITHUB_USERNAME/openclaw-claude-code-integration)](https://github.com/YOUR_GITHUB_USERNAME/openclaw-claude-code-integration/stargazers)
+## Core Built-ins
 
-[English](README.md) | [简体中文](README_CN.md)
+- `runtime core`: `WorkspaceResolver`, `SessionResolver`, `PolicyEngine`, `ContextEngine`, `MemoryProvider`, `RuleStore`, `SandboxProvider`, `TraceExporter`
+- `content layer`: the existing skills remain intact under `skills/`
+- `distribution`: manifests and bundle metadata are generated from `metadata/canonical.json`
+- `checks`: markdown-defined validation reused locally and in CI
 
-</div>
+## Optional Adapters
 
----
+<!-- generated-adapters:start -->
+- `openclaw-native`: Native OpenClaw plugin metadata and bundle output.
+- `claude-bundle`: Claude-compatible bundle manifest and command roots.
+- `codex-bundle`: Codex-compatible bundle manifest and hook packs.
+- `lossless-context`: Optional context preservation backend for compaction workflows.
+- `observability`: Structured event exporter with optional Opik/Langfuse bridges.
+- `temporal-memory`: Optional temporal memory interface with local stub implementation.
+- `remote-sandbox`: Optional remote sandbox provider interface.
+<!-- generated-adapters:end -->
 
-## 为什么做这个？
+## Modes
 
-**2026 年 3 月 31 日**，Claude Code 完整 TypeScript 源码意外泄露。源码揭示了一套生产级 AI Agent 核心工程系统——从未出现在官方文档里：
+- `ask`: read-only, no network, strict approval
+- `plan`: scoped planning with allowlisted execution
+- `build`: default implementation mode with validation
+- `debug`: diagnosis-first mode with trace support
+- `review`: read-only review and checks
+- `auto`: profile-driven automation with sandbox hooks
 
-| 系统 | 作用 |
-|------|------|
-| **autoDream** | 24h+5sessions 自动整合记忆 |
-| **YOLO 分类器** | Bash 命令四级风险评估，fail-closed |
-| **压缩熔断机制** | 防止 auto-compact 死循环 |
-| **四层 Bash 安全** | AST 解析 → 正则验证 → 权限规则 → OS 沙箱 |
+## Installation
 
-这套系统背后是 **$2.5B ARR 商业产品**在真实生产环境踩过的坑。**本仓库**把对 OpenClaw 用户真正有价值的部分提炼出来，整理成可直接安装的 skill 和配置。
+### OpenClaw Native Plugin
 
----
-
-## ✨ 你得到了什么
-
-### 🔧 8 个可安装的 Skills
-
-| Skill | 功能 | 触发方式 |
-|-------|------|---------|
-| **self-eval** | 每次 session 结束检测异常，写入 reflection 记忆 | `command:stop` hook |
-| **evolve** | 从 reflection 记忆提炼 NEVER/MUST 规则 | 手动或 `gateway:startup` |
-| **memory-compaction** | 每周自动整理 LanceDB，删除低价值记忆 + 合并相似碎片 | cron（每周日凌晨3点） |
-| **compact-guardian** | 压缩连续3次失败后熔断，停用自动压缩 + Telegram 告警 | 自动监控 |
-| **cache-monitor** | agent:bootstrap 时检测 prompt cache 是否失效 | `agent:bootstrap` hook |
-| **smart-compact** | LLM 摘要压缩 session 文件（双阶段输出） | 手动 |
-| **yolo-permissions** | 三级权限分类（LOW/MEDIUM/HIGH），fail-closed | 自动集成到 exec |
-| **safe-command-execution** | Bash AST 解析 + 正则验证，检测危险命令 | 自动集成到 exec |
-
-### 🧪 测试套件
-
-**94 个 pytest 测试**，覆盖 bash_guard / self_eval / evolve / yolo_classifier
-
-### 📜 配置示例
-
-- `SOUL.md` — 人格与表达规范（含 Akino 规则）
-- `AGENTS.md` — 完整行为协议（含 11 条用户纠正检测规则）
-- `docs/` — 4 篇设计文档，解释背后的工程思路
-
----
-
-## 系统架构
-
-```
-用户对话
-    │
-    ├── command:stop ──→ self_eval.py ──→ LanceDB (reflection)
-    │
-    ├── agent:bootstrap ──→ cache_monitor.py ──→ 静态层变更检测
-    │
-    └── gateway:startup ──→ evolve 提醒 ──→ 手动触发规则提炼
-
-─────────────────────────────────────────────────
-
-LanceDB memories 表
-    │
-    ├── 实时：autoCapture（memory-lancedb-pro 插件）
-    │
-    ├── 每周 cron ──→ memory_compaction.py ──→ 备份 + 删除 + 合并
-    │
-    └── 手动 evolve ──→ 规则写入 AGENTS.md
-```
-
----
-
-## 快速安装
+Use the generated root manifest:
 
 ```bash
-# 克隆仓库
-git clone https://github.com/YOUR_GITHUB_USERNAME/openclaw-claude-code-integration.git
-cd openclaw-claude-code-integration
-
-# 安装所有 skills
-cp -r skills/* ~/.openclaw/workspace/skills/
-
-# 复制配置文件（按需修改）
-cp SOUL.md ~/.openclaw/workspace/SOUL.md
-cp AGENTS.md ~/.openclaw/workspace/AGENTS.md
-
-# 重启 Gateway
-openclaw gateway restart
+python3 tools/sync_repo_state.py
+cat openclaw.plugin.json
 ```
 
-确认生效：
+### Claude Bundle
+
+Use `.claude-plugin/plugin.json` and the bundled commands/settings:
+
 ```bash
-openclaw skills list | grep -E "self-eval|evolve|compact|cache|yolo|safe"
+python3 tools/sync_repo_state.py
+cat .claude-plugin/plugin.json
 ```
 
----
+### Codex Bundle
 
-## 核心设计思路
+Use `.codex-plugin/plugin.json` and the hook pack under `.codex-plugin/hooks/post-edit-validation/`:
 
-### 提示词即协议（Prompt-as-Protocol）
-
-> 不要写模糊指令，只写明确协议。
-
-```markdown
-# ❌ 模糊指令（无效）
-尽量小心处理涉及资金的操作
-
-# ✅ 明确协议（可执行）
-NEVER 直接修改涉及资金/仓位/外部发送的操作，必须先生成变更计划等用户确认
+```bash
+python3 tools/sync_repo_state.py
+cat .codex-plugin/plugin.json
 ```
 
-### 静态/动态分层（Prompt Cache 优化）
+### Development Install
 
+For local development, keep the repo checked out and link or install the appropriate manifest/bundle into your host environment. Manual `cp -r skills/*` remains possible for legacy setups, but it is no longer the primary path.
+
+## Skills
+
+<!-- generated-skills:start -->
+- `behavior-analyzer`: Session health analysis and anomaly detection.
+- `cache-monitor`: Static and dynamic prompt layer cache drift monitoring.
+- `compact-guardian`: Circuit breaker and recovery flow for failed compactions.
+- `evolve`: Rule extraction from reflections and learnings.
+- `fusion-engine`: Multi-source context fusion for decision support.
+- `knowledge-federation`: Rule sharing, federation, and long-term optimization.
+- `memory-compaction`: Memory pruning, merging, and optional lossless backends.
+- `rule-optimizer`: Effectiveness scoring and A/B rule refinement.
+- `safe-command-execution`: AST-based shell command inspection.
+- `self-eval`: Reflection capture and learnings persistence.
+- `smart-compact`: Session compaction strategy and transcript rewriting.
+- `yolo-permissions`: Command risk scoring and permission classification.
+<!-- generated-skills:end -->
+
+## Tests
+
+<!-- generated-tests:start -->
+- `skills/behavior-analyzer/tests/test_behavior_analyzer.py`: 10
+- `skills/fusion-engine/tests/test_fusion_engine.py`: 17
+- `skills/knowledge-federation/tests/test_central_api.py`: 15
+- `skills/knowledge-federation/tests/test_hook_integration.py`: 10
+- `skills/knowledge-federation/tests/test_knowledge_federation.py`: 29
+- `skills/knowledge-federation/tests/test_long_term_evolution.py`: 17
+- `skills/knowledge-federation/tests/test_rule_recommender.py`: 20
+- `skills/rule-optimizer/tests/test_rule_optimizer.py`: 9
+- `tests/distribution/test_sync_repo_state.py`: 1
+- `tests/runtime_core/test_policy_engine.py`: 2
+- `tests/runtime_core/test_validation.py`: 2
+- `tests/runtime_core/test_workspace_resolver.py`: 2
+- `tests/smoke/test_tools_smoke.py`: 1
+- `tests/test_bash_guard.py`: 33
+- `tests/test_evolve.py`: 11
+- `tests/test_learnings_extractor.py`: 8
+- `tests/test_permission_scorer.py`: 9
+- `tests/test_recovery_manager.py`: 6
+- `tests/test_self_eval.py`: 16
+- `tests/test_yolo_classifier.py`: 20
+- `tests/test_health_check.sh`: 1
+<!-- generated-tests:end -->
+
+## Directory Overview
+
+<!-- generated-tree:start -->
+- `metadata/`
+  - `metadata/canonical.json`
+- `oeck/`
+  - `oeck/__init__.py`
+  - `oeck/adapters`
+  - `oeck/distribution`
+  - `oeck/runtime_core`
+- `skills/`
+  - `skills/__init__.py`
+  - `skills/behavior-analyzer`
+  - `skills/cache-monitor`
+  - `skills/compact-guardian`
+  - `skills/evolve`
+  - `skills/fusion-engine`
+  - `skills/knowledge-federation`
+  - `skills/memory-compaction`
+  - `skills/rule-optimizer`
+  - `skills/safe-command-execution`
+  - `skills/self-eval`
+  - `skills/shared`
+  - `skills/smart-compact`
+  - `skills/yolo-permissions`
+- `docs/`
+  - `docs/01-architecture.md`
+  - `docs/02-prompt-engineering.md`
+  - `docs/03-memory-system.md`
+  - `docs/04-session-hooks.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/AUDIT.md`
+  - `docs/MIGRATION.md`
+  - `docs/generated`
+- `.openclaw/`
+  - `.openclaw/checks`
+- `.claude-plugin/`
+  - `.claude-plugin/commands`
+  - `.claude-plugin/plugin.json`
+  - `.claude-plugin/settings.json`
+- `.codex-plugin/`
+  - `.codex-plugin/hooks`
+  - `.codex-plugin/plugin.json`
+- `plugins/`
+  - `plugins/openclaw-native`
+- `tests/`
+  - `tests/__init__.py`
+  - `tests/conftest.py`
+  - `tests/distribution`
+  - `tests/runtime_core`
+  - `tests/smoke`
+  - `tests/test_bash_guard.py`
+  - `tests/test_evolve.py`
+  - `tests/test_health_check.sh`
+  - `tests/test_learnings_extractor.py`
+  - `tests/test_permission_scorer.py`
+  - `tests/test_recovery_manager.py`
+  - `tests/test_self_eval.py`
+  - `tests/test_yolo_classifier.py`
+- `tools/`
+  - `tools/health_check.sh`
+  - `tools/health_check_config.json`
+  - `tools/post_edit_validate.py`
+  - `tools/repo_map.py`
+  - `tools/run_checks.py`
+  - `tools/smoke_test.py`
+  - `tools/sync_repo_state.py`
+- `.github/`
+  - `.github/workflows`
+<!-- generated-tree:end -->
+
+## Development Workflow
+
+```bash
+python3 tools/sync_repo_state.py
+python3 tools/run_checks.py --all
+python3 tools/post_edit_validate.py
+python3 tools/repo_map.py --summary
+python3 tools/smoke_test.py
 ```
-┌─────────────────────────────────────────┐
-│  静态层（每次对话不变化，命中 cache）   │
-│  SOUL.md / AGENTS.md / TOOLS.md          │
-│  USER.md / IDENTITY.md                  │
-│  HEARTBEAT.md                           │
-├────────── <!-- DYNAMIC_BOUNDARY --> ─────┤
-│  动态层（每次刷新，按需注入）            │
-│  MEMORY.md                              │
-│  LanceDB 检索结果                       │
-└─────────────────────────────────────────┘
-```
 
-在 HEARTBEAT.md 和 MEMORY.md 之间插入 `<!-- DYNAMIC_BOUNDARY -->` 分隔符，边界前内容稳定命中 prompt cache，每次节省约 6,000-8,000 tokens。
+## Docs
 
-### 支持 Prompt Cache 的模型
-
-| 模型 | 缓存机制 | 配置方式 |
-|------|---------|---------|
-| **Claude**（Anthropic API） | 原生自动缓存 | 无需配置 |
-| **GPT-4o**（OpenAI API） | 自动缓存 | 无需配置（>1024 tokens 自动生效） |
-| **Gemini 1.5 Pro** | 显式 Context Caching | 需手动创建缓存 |
-| **DeepSeek V3/R1**（SiliconFlow） | 支持 | SiliconFlow 上已配置 |
-
-> **当前 OpenClaw（MiniMax）：** 不支持 prompt cache 自动复用。静态/动态分层架构已就绪，模型支持后自动生效。
-
----
-
-## 🚀 Week 1-4 新增功能模块
-
-为了提升系统可靠性和可观测性，新增 4 个关键功能模块：
-
-### Week 1: Health Check Dashboard
-**目的**: 一键查看系统状态，提前发现问题
-
-**功能**:
-- 🧠 MEMORY.md 容量监控（含使用率百分比和趋势）
-- ⏱️ memory-compaction 最后运行时间检查
-- 🛡️ guardian 熔断状态监控
-- 📋 规则统计（NEVER/MUST/ALWAYS 分布）
-- 📊 最近 7 天 session 数统计
-- 🗄️ LanceDB memories 表大小
-- 🚨 最近 24 小时错误计数
-
-**用法**: `bash tools/health_check.sh [text|json|html]`
-
-### Week 2: Smart Restart 故障恢复
-**目的**: memory-compaction 失败时自动恢复，防止数据损坏
-
-**功能**:
-- 自动故障记录和重试（指数退避：0s → 5m → 30m）
-- 备份自动回滚
-- 状态持久化到 circuit_state.json
-- Telegram 多级告警
-- 熔断保护（4 次失败后停用 auto-compact）
-
-**集成**: 自动与 memory_compaction.py 协作
-
-### Week 3: Learnings 规则导出
-**目的**: 自动从 reflection 记忆提炼规则候选，加快知识积累
-
-**功能**:
-- 从 LanceDB reflection 记忆自动提取
-- MUST/NEVER/ALWAYS 等级自动分类
-- 相似度合并（余弦相似度 ≥ 0.85）
-- 用户审核工作流
-- Markdown 输出供人工确认
-
-**用法**: 在 `/evolve` 中自动触发或手动运行
-
-### Week 4: Permission Scorer 权限细化
-**目的**: 从简单的 HIGH/MEDIUM/LOW 升级到精细的动态打分
-
-**功能**:
-- 4 维度加权打分模型（Operation 40% + Path 30% + Context 20% + Pattern 10%）
-- 输出 0-100 分数 + LOW/MEDIUM/HIGH/CRITICAL 标签
-- 动态上下文感知（脚本类型、操作目标等）
-- 完全向后兼容
-
-**示例**:
-- `ls /tmp` → 5/100 (LOW)
-- `rm /tmp/file` → 65/100 (HIGH)
-- `rm /` → 100/100 (CRITICAL)
-
-**集成**: 自动与 yolo_classifier.py 协作，提升权限判断精度
-
----
-
-```
-openclaw-claude-code-integration/
-├── README.md / README_CN.md           # 本文件（双语）
-├── SOUL.md                            # 人格与表达规范
-├── AGENTS.md                          # 完整行为协议（11条规则）
-├── MANUAL.md                          # 使用手册
-├── SKILL.md                           # Skill 开发规范
-├── skills/
-│   ├── self-eval/                   # 自我评估脚本
-│   ├── evolve/                       # 规则提炼（含 learnings 整合）
-│   ├── memory-compaction/            # LanceDB 定期整理（access_count 权重）
-│   ├── compact-guardian/              # 压缩熔断
-│   ├── cache-monitor/               # Prompt cache 监控
-│   ├── smart-compact/               # LLM 摘要压缩（双阶段输出）
-│   ├── yolo-permissions/            # 三级权限分类
-│   └── safe-command-execution/      # Bash AST 安全层
-├── tests/                            # pytest 测试套件（94测试）
-└── docs/
-    ├── 01-architecture.md           # 设计思路详解
-    ├── 02-prompt-engineering.md     # 提示词工程对比分析
-    ├── 03-memory-system.md           # 记忆系统架构
-    └── 04-session-hooks.md          # 钩子注册说明
-```
-
----
-
-## 与 Claude Code 原文的对比
-
-| 维度 | Claude Code 源码 | 本整合方案 | 状态 |
-|------|----------------|-----------|------|
-| autoDream | ✅ 24h+5sessions 自动整合 | ❌ 需 OpenClaw 支持 `session:end` 钩子 | [已向官方提 issue](https://github.com/openclaw/openclaw/issues/60514) |
-| YOLO Bash 分类 | ✅ 四级风险，fail-closed | ✅ 已实现 | ✅ |
-| 四层 Bash 安全 | ✅ AST+正则+权限+沙箱 | ✅ AST+正则已实现 | ⚠️ 部分 |
-| 工具失败协议 | ✅ 明确处理路径 | ✅ 写入 AGENTS.md | ✅ |
-| 压缩熔断 | ✅ auto-compact 死循环保护 | ✅ 已实现 | ✅ |
-| evolve 规则提炼 | ❌ 无 | ✅ 手动触发 | ✅ |
-| Fork cache 复用 | ✅ 子 agent 复用父 prompt cache | ❌ MiniMax 不支持 | ❌ |
-
----
-
-## ⚠️ 已知限制
-
-1. **`session:end` 钩子**：OpenClaw 当前版本不支持，已向[官方提 issue](https://github.com/openclaw/openclaw/issues/60514)。
-2. **Fork cache 复用**：Claude Code 支持，MiniMax 不支持。
-3. **OS 沙箱层**：Bash AST 安全层只实现了 AST 解析+正则验证，bwrap 沙箱需系统级支持。
-
----
-
-## ⚠️ 免责声明
-
-本仓库**不包含任何 Claude Code 原始源码**，只提取了工程思路和设计模式。Claude Code 源码版权属于 Anthropic PBC。
-
----
-
-## 致谢
-
-- Claude Code 源码泄露发现：[Chaofan Shou](https://twitter.com/Fried_rice)
-- OpenClaw 项目：[Peter Steinberger](https://twitter.com/steipete)
-- Compound Engineering 插件：[EveryInc](https://github.com/EveryInc)
-- memory-lancedb-pro：[CortexReach](https://github.com/CortexReach)
-
----
-
-## License
-
-MIT — 配置文件和 skill 模板可自由使用和修改。
+- [Architecture](docs/ARCHITECTURE.md)
+- [Migration](docs/MIGRATION.md)
+- [Audit](docs/AUDIT.md)
+- [LLM Index](llms.txt)

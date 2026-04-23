@@ -1,0 +1,66 @@
+- `metadata/`
+  - `metadata/canonical.json`
+- `oeck/`
+  - `oeck/__init__.py`
+  - `oeck/adapters`
+  - `oeck/distribution`
+  - `oeck/runtime_core`
+- `skills/`
+  - `skills/__init__.py`
+  - `skills/behavior-analyzer`
+  - `skills/cache-monitor`
+  - `skills/compact-guardian`
+  - `skills/evolve`
+  - `skills/fusion-engine`
+  - `skills/knowledge-federation`
+  - `skills/memory-compaction`
+  - `skills/rule-optimizer`
+  - `skills/safe-command-execution`
+  - `skills/self-eval`
+  - `skills/shared`
+  - `skills/smart-compact`
+  - `skills/yolo-permissions`
+- `docs/`
+  - `docs/01-architecture.md`
+  - `docs/02-prompt-engineering.md`
+  - `docs/03-memory-system.md`
+  - `docs/04-session-hooks.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/AUDIT.md`
+  - `docs/MIGRATION.md`
+  - `docs/generated`
+- `.openclaw/`
+  - `.openclaw/checks`
+- `.claude-plugin/`
+  - `.claude-plugin/commands`
+  - `.claude-plugin/plugin.json`
+  - `.claude-plugin/settings.json`
+- `.codex-plugin/`
+  - `.codex-plugin/hooks`
+  - `.codex-plugin/plugin.json`
+- `plugins/`
+  - `plugins/openclaw-native`
+- `tests/`
+  - `tests/__init__.py`
+  - `tests/conftest.py`
+  - `tests/distribution`
+  - `tests/runtime_core`
+  - `tests/smoke`
+  - `tests/test_bash_guard.py`
+  - `tests/test_evolve.py`
+  - `tests/test_health_check.sh`
+  - `tests/test_learnings_extractor.py`
+  - `tests/test_permission_scorer.py`
+  - `tests/test_recovery_manager.py`
+  - `tests/test_self_eval.py`
+  - `tests/test_yolo_classifier.py`
+- `tools/`
+  - `tools/health_check.sh`
+  - `tools/health_check_config.json`
+  - `tools/post_edit_validate.py`
+  - `tools/repo_map.py`
+  - `tools/run_checks.py`
+  - `tools/smoke_test.py`
+  - `tools/sync_repo_state.py`
+- `.github/`
+  - `.github/workflows`

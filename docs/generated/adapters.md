@@ -1,0 +1,7 @@
+- `openclaw-native`: Native OpenClaw plugin metadata and bundle output.
+- `claude-bundle`: Claude-compatible bundle manifest and command roots.
+- `codex-bundle`: Codex-compatible bundle manifest and hook packs.
+- `lossless-context`: Optional context preservation backend for compaction workflows.
+- `observability`: Structured event exporter with optional Opik/Langfuse bridges.
+- `temporal-memory`: Optional temporal memory interface with local stub implementation.
+- `remote-sandbox`: Optional remote sandbox provider interface.
