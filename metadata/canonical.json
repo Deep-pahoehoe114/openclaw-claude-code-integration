@@ -1,0 +1,221 @@
+{
+  "kit": {
+    "id": "openclaw-enhancement-kit",
+    "name": "OpenClaw Enhancement & Compatibility Kit",
+    "tagline": "A governance, compatibility, and runtime enhancement layer for OpenClaw, Claude, and Codex.",
+    "version": "0.2.0",
+    "license": "MIT",
+    "python_requires": ">=3.10"
+  },
+  "distribution": {
+    "openclaw_plugin": {
+      "manifest": "openclaw.plugin.json",
+      "entry": "plugins/openclaw-native/index.mjs"
+    },
+    "claude_bundle": {
+      "manifest": ".claude-plugin/plugin.json"
+    },
+    "codex_bundle": {
+      "manifest": ".codex-plugin/plugin.json"
+    }
+  },
+  "skills": [
+    {
+      "id": "behavior-analyzer",
+      "title": "Behavior Analyzer",
+      "path": "skills/behavior-analyzer",
+      "entry": "skills/behavior-analyzer/scripts/behavior_analyzer.py",
+      "category": "content",
+      "summary": "Session health analysis and anomaly detection."
+    },
+    {
+      "id": "cache-monitor",
+      "title": "Cache Monitor",
+      "path": "skills/cache-monitor",
+      "entry": "skills/cache-monitor/scripts/cache_monitor.py",
+      "category": "content",
+      "summary": "Static and dynamic prompt layer cache drift monitoring."
+    },
+    {
+      "id": "compact-guardian",
+      "title": "Compact Guardian",
+      "path": "skills/compact-guardian",
+      "entry": "skills/compact-guardian/scripts/compact_guardian.py",
+      "category": "content",
+      "summary": "Circuit breaker and recovery flow for failed compactions."
+    },
+    {
+      "id": "evolve",
+      "title": "Evolve",
+      "path": "skills/evolve",
+      "entry": "skills/evolve/scripts/evolve.py",
+      "category": "content",
+      "summary": "Rule extraction from reflections and learnings."
+    },
+    {
+      "id": "fusion-engine",
+      "title": "Fusion Engine",
+      "path": "skills/fusion-engine",
+      "entry": "skills/fusion-engine/scripts/fusion_engine.py",
+      "category": "content",
+      "summary": "Multi-source context fusion for decision support."
+    },
+    {
+      "id": "knowledge-federation",
+      "title": "Knowledge Federation",
+      "path": "skills/knowledge-federation",
+      "entry": "skills/knowledge-federation/scripts/knowledge_federation.py",
+      "category": "content",
+      "summary": "Rule sharing, federation, and long-term optimization."
+    },
+    {
+      "id": "memory-compaction",
+      "title": "Memory Compaction",
+      "path": "skills/memory-compaction",
+      "entry": "skills/memory-compaction/scripts/memory_compaction.py",
+      "category": "content",
+      "summary": "Memory pruning, merging, and optional lossless backends."
+    },
+    {
+      "id": "rule-optimizer",
+      "title": "Rule Optimizer",
+      "path": "skills/rule-optimizer",
+      "entry": "skills/rule-optimizer/scripts/rule_optimizer.py",
+      "category": "content",
+      "summary": "Effectiveness scoring and A/B rule refinement."
+    },
+    {
+      "id": "safe-command-execution",
+      "title": "Safe Command Execution",
+      "path": "skills/safe-command-execution",
+      "entry": "skills/safe-command-execution/scripts/safe_ast_check.py",
+      "category": "content",
+      "summary": "AST-based shell command inspection."
+    },
+    {
+      "id": "self-eval",
+      "title": "Self Eval",
+      "path": "skills/self-eval",
+      "entry": "skills/self-eval/scripts/self_eval.py",
+      "category": "content",
+      "summary": "Reflection capture and learnings persistence."
+    },
+    {
+      "id": "smart-compact",
+      "title": "Smart Compact",
+      "path": "skills/smart-compact",
+      "entry": "skills/smart-compact/scripts/smart_compact.py",
+      "category": "content",
+      "summary": "Session compaction strategy and transcript rewriting."
+    },
+    {
+      "id": "yolo-permissions",
+      "title": "YOLO Permissions",
+      "path": "skills/yolo-permissions",
+      "entry": "skills/yolo-permissions/scripts/yolo_classifier.py",
+      "category": "content",
+      "summary": "Command risk scoring and permission classification."
+    }
+  ],
+  "adapters": [
+    {
+      "id": "openclaw-native",
+      "kind": "distribution",
+      "default_enabled": true,
+      "optional": false,
+      "summary": "Native OpenClaw plugin metadata and bundle output."
+    },
+    {
+      "id": "claude-bundle",
+      "kind": "distribution",
+      "default_enabled": true,
+      "optional": false,
+      "summary": "Claude-compatible bundle manifest and command roots."
+    },
+    {
+      "id": "codex-bundle",
+      "kind": "distribution",
+      "default_enabled": true,
+      "optional": false,
+      "summary": "Codex-compatible bundle manifest and hook packs."
+    },
+    {
+      "id": "lossless-context",
+      "kind": "runtime",
+      "default_enabled": false,
+      "optional": true,
+      "summary": "Optional context preservation backend for compaction workflows."
+    },
+    {
+      "id": "observability",
+      "kind": "runtime",
+      "default_enabled": true,
+      "optional": true,
+      "summary": "Structured event exporter with optional Opik/Langfuse bridges."
+    },
+    {
+      "id": "temporal-memory",
+      "kind": "runtime",
+      "default_enabled": false,
+      "optional": true,
+      "summary": "Optional temporal memory interface with local stub implementation."
+    },
+    {
+      "id": "remote-sandbox",
+      "kind": "runtime",
+      "default_enabled": false,
+      "optional": true,
+      "summary": "Optional remote sandbox provider interface."
+    }
+  ],
+  "modes": [
+    {
+      "id": "ask",
+      "approval": "strict",
+      "network": "deny",
+      "shell": "read-only",
+      "tools": ["read", "search", "explain"],
+      "summary": "Answers and inspections without modification."
+    },
+    {
+      "id": "plan",
+      "approval": "confirm",
+      "network": "allowlisted",
+      "shell": "limited-write",
+      "tools": ["read", "search", "plan", "repo-map"],
+      "summary": "Planning and scoping with bounded execution."
+    },
+    {
+      "id": "build",
+      "approval": "confirm",
+      "network": "allowlisted",
+      "shell": "workspace-write",
+      "tools": ["edit", "test", "repo-map", "policy"],
+      "summary": "Feature implementation with validation."
+    },
+    {
+      "id": "debug",
+      "approval": "confirm",
+      "network": "allowlisted",
+      "shell": "workspace-write",
+      "tools": ["inspect", "trace", "test", "policy"],
+      "summary": "Diagnosis-first mode with stronger observability."
+    },
+    {
+      "id": "review",
+      "approval": "strict",
+      "network": "deny",
+      "shell": "read-only",
+      "tools": ["read", "diff", "checks", "policy"],
+      "summary": "Review-only mode for code and policy checks."
+    },
+    {
+      "id": "auto",
+      "approval": "profile-driven",
+      "network": "allowlisted",
+      "shell": "sandboxed-write",
+      "tools": ["edit", "test", "checks", "trace", "policy"],
+      "summary": "Automated execution with policy gates and sandbox providers."
+    }
+  ]
+}

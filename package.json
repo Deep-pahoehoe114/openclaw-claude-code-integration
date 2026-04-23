@@ -1,0 +1,12 @@
+{
+  "name": "openclaw-enhancement-kit",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Governance, compatibility, and runtime enhancement layer for OpenClaw, Claude, and Codex.",
+  "openclaw": {
+    "extensions": [
+      "plugins/openclaw-native/index.mjs"
+    ]
+  }
+}

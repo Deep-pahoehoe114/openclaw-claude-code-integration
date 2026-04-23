@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "openclaw-enhancement-kit",
+  "name": "OpenClaw Enhancement & Compatibility Kit",
+  "version": "0.2.0",
+  "description": "A governance, compatibility, and runtime enhancement layer for OpenClaw, Claude, and Codex.",
+  "skills": [
+    "skills/behavior-analyzer",
+    "skills/cache-monitor",
+    "skills/compact-guardian",
+    "skills/evolve",
+    "skills/fusion-engine",
+    "skills/knowledge-federation",
+    "skills/memory-compaction",
+    "skills/rule-optimizer",
+    "skills/safe-command-execution",
+    "skills/self-eval",
+    "skills/smart-compact",
+    "skills/yolo-permissions"
+  ],
+  "checks": [
+    ".openclaw/checks"
+  ],
+  "entry": "plugins/openclaw-native/index.mjs"
+}
