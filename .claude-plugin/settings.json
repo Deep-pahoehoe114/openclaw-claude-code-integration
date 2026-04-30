@@ -1,4 +1,0 @@
-{
-  "checksCommand": "python3 tools/post_edit_validate.py",
-  "repoMapCommand": "python3 tools/repo_map.py --summary"
-}

